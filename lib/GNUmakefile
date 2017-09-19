@@ -1,5 +1,5 @@
 
-libpotato.so_SOURCES := debug.c
+libpotato.so_SOURCES := debug.c murmurHash.c
 libpotato.so_CPPFLAGS := -DDEBUG
 
 INSTALL_DIR = $(PREFIX)/lib 
