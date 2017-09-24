@@ -1,0 +1,13 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+version=@VERSION@
+
+Name: potato
+Description: potato the web server library
+Version: @VERSION@
+Requires: gnutls >= 3.3.8
+Libs: -L${libdir} -lpotato -Wl,-rpath,${libdir}
+Cflags: -I${includedir}

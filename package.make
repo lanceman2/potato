@@ -5,3 +5,7 @@
 
 # quickbuild.make reads this file for package specific configuration
 # and config.make for build instance configuration.
+
+VERSION = 0.0
+
+PREFIX ?= $(HOME)/installed/potato
