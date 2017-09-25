@@ -8,6 +8,11 @@
 */
 #include <inttypes.h>
 #include <stdio.h>
+#include <time.h>
+#include <stdbool.h>
+#include <stdarg.h>
+
+#include "debug.h"
 #include "murmurHash.h"
 
 

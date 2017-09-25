@@ -31,7 +31,7 @@
 #endif
 
 
-static void vspew(const char *pre, const char *file,
+void _vspew(const char *pre, const char *file,
         const char *func, int line,
         const char *fmt, va_list ap)
 {
@@ -102,7 +102,7 @@ void _spew(const char *pre, enum PO_SPEW_LEVEL level,
 #endif
     va_list ap;
     va_start(ap, fmt);
-    vspew(pre, file, func, line, fmt, ap);
+    _vspew(pre, file, func, line, fmt, ap);
     va_end(ap);
 }
 

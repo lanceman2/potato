@@ -36,7 +36,26 @@ extern void _spew(const char *pre, enum PO_SPEW_LEVEL level,
          // check printf format errors at compile time:
         __attribute__ ((format (printf, 6, 7)));
 
+extern void _vspew(const char *pre, const char *file,
+        const char *func, int line,
+        const char *fmt, va_list ap);
+
 extern void _assertAction(void);
+
+static inline bool _assert(bool val, const char *pre,
+        const char *file, const char *func,
+        int line, const char *fmt, ...)
+{
+    if((bool) (val)) return false; // success
+    va_list ap;
+    va_start(ap, fmt);
+    _vspew(pre, file, func, line, fmt, ap);
+    va_end(ap);
+    _assertAction();
+    return true; // fail
+}
+
+
 
 extern void poDebugInit(void);
 
@@ -67,27 +86,16 @@ extern void _spewLevel(enum PO_SPEW_LEVEL level);
      _SPEW("SPEW: ", PO_SPEW_ERROR, fmt, ##__VA_ARGS__)
 
 #define _VASSERT(val, fmt, ...) \
-    do {\
-        if(!((bool) (val))) {\
-            _SPEW("ASSERT: ", 0, "ASSERT(%s) failed: "\
-                fmt, #val, ##__VA_ARGS__);\
-            _assertAction();\
-        }\
-    }\
-    while(0)
-
-
+    _assert((val), "ASSERT: ", __BASE_FILE__,\
+        __func__, __LINE__, "failed: " fmt, ##__VA_ARGS__)
 
 #define ASSERT(val)                _VASSERT(val, "")
 #define VASSERT(val, fmt, ...)     _VASSERT(val, fmt, ##__VA_ARGS__)
 
 
 #define FAIL(fmt, ...) \
-    do {\
-        _SPEW("FAIL: ", 0, fmt, ##__VA_ARGS__);\
-        _assertAction();\
-    } while(0)
-
+    _assert(false, "FAIL: ", __BASE_FILE__,\
+        __func__, __LINE__, "failed: " fmt, ##__VA_ARGS__)
 
 ///////////////////////////////////////////////////////////////////////////
 

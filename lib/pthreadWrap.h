@@ -1,6 +1,3 @@
-#ifndef __PTHREADWRAP_H__
-#define __PTHREADWRAP_H__
-
 #include <errno.h>
 #include <pthread.h>
 
@@ -31,7 +28,7 @@ bool _mutexTryLock(pthread_mutex_t *mutex)
         default:
             VASSERT(0, "pthread_mutex_trylock() failed\n");
     }
-    return false; // ooh shit
+    return false; // oh shit
 }
 
 static inline
@@ -41,7 +38,7 @@ bool _mutexLock(pthread_mutex_t *mutex)
     {
         if(errno != EINTR)
             return VASSERT(0, "pthread_mutex_lock() failed");
-        DLOG("pthread_mutex_lock() was interrupted by a signal\n");
+        WARN("pthread_mutex_lock() was interrupted by a signal\n");
     }
     return false;
 }
@@ -53,8 +50,7 @@ _MutexTryLock(pthread_mutex_t *mutex, const char *file, int line)
 {
     bool ret = _mutexTryLock(mutex);
     if(!ret)
-        fprintf(PO_ELOG_FILE, "%s:%d %s failed\n",
-            file, line, __func__);
+        ERROR("%s:%d %s failed\n", file, line, __func__);
     return ret;
 }
 
@@ -63,8 +59,7 @@ _MutexLock(pthread_mutex_t *mutex, const char *file, int line)
 {
     if(!_mutexTryLock(mutex))
     {
-        fprintf(PO_ELOG_FILE, "%s:%d %s blocked\n",
-            file, line, __func__);
+        ERROR("%s:%d %s blocked\n", file, line, __func__);
         return _mutexLock(mutex);
     }
     return false;
@@ -115,9 +110,7 @@ bool condWait(pthread_cond_t *cond, pthread_mutex_t *mutex)
     {
         if(errno != EINTR)
             return VASSERT(0, "pthread_cond_wait() failed");
-        DLOG("pthread_cond_wait() was interrupted by a signal\n");
+        WARN("pthread_cond_wait() was interrupted by a signal\n");
     }
     return false;
 }
-
-#endif // #ifndef __PTHREADWRAP_H__

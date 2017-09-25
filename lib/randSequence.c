@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include "murmurHash.h"
 #include "debug.h"
 #include "randSequence.h"
