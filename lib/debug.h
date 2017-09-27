@@ -55,7 +55,8 @@ static inline bool _assert(bool val, const char *pre,
     return true; // fail
 }
 
-
+/** /brief set up a SIGFAULT signal catcher
+ */
 
 extern void poDebugInit(void);
 

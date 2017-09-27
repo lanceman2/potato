@@ -2,15 +2,15 @@
 // Using the murmur hash we generate pseudo random numbers.  This is not
 // for cryptography.  murmur hash is not for cryptography.
 
-//#include <stdint.h>
-//#include <string.h>
-//#include "murmurHash.h"
+/// \cond SKIP
 
 struct PORandom
 {
     uint32_t seed;
     uint32_t counter;
 };
+
+/// \endcond
 
 static inline
 struct PORandom *poRandom_init(struct PORandom *r, uint32_t seed)

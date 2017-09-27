@@ -17,7 +17,7 @@ alloc(size_t s)
 
 
 struct POThreadPool *poThreadPool_create(
-        bool detach, bool waitIfFull /* otherwise run() returns if full */,
+        bool waitIfFull /* otherwise run() returns if full */,
         uint32_t maxQueueLength, uint32_t maxNumThreads,
         uint32_t maxIdleTime/*micro-seconds*/)
 {
