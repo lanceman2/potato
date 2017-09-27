@@ -1,6 +1,10 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+// This is set from package.make or config.make
+// Here we define PO_DEBUG or not
+@PO_DEBUG@
+
 // If you added files here edit ./potato/GNUmakefile
 #include <potato/murmurHash.h>
 // If you added files here edit ./potato/GNUmakefile

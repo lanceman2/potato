@@ -60,7 +60,7 @@ static inline bool _assert(bool val, const char *pre,
 extern void poDebugInit(void);
 
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
 
 extern void _spewLevel(enum PO_SPEW_LEVEL level);
 
@@ -131,7 +131,7 @@ extern void _spewLevel(enum PO_SPEW_LEVEL level);
 
 
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
 #  define DASSERT(val)            _VASSERT(val, "")
 #  define DVASSERT(val, fmt, ...) _VASSERT(val, fmt, ##__VA_ARGS__)
 #  define WARN(fmt, ...)   _SPEW("WARN: ", PO_SPEW_WARN, fmt, ##__VA_ARGS__)

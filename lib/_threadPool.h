@@ -103,7 +103,7 @@ struct POThreadPool_tasks
         *unused; // this is a stack top
     // Others lists for in each tract
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
     // These lengths must add to PO_THREADPOOL_QUEUE_LENGTH
     uint32_t queueLength, unusedLength, tractLength; 
 #endif
@@ -161,7 +161,7 @@ struct POThreadPool_workers
         // not used).
         *unused;
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
     // PO_THREADPOOL_MAX_NUM_THREADS = 
     // unusedLength + idleLength +  working threads =
     // unusedLength + POThreadPool::numThreads
@@ -175,7 +175,7 @@ struct POThreadPool_workers
 
 struct POThreadPool
 {
-#ifdef DEBUG
+#ifdef PO_DEBUG
     // The thread that calls poThreadPool_create() is the only thread
     // that may call poThreadPool_runTask()
     pthread_t master; // The thread that called poThreadPool_create().

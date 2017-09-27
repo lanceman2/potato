@@ -40,7 +40,7 @@ void _vspew(const char *pre, const char *file,
 }
 
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
 
 static __thread enum PO_SPEW_LEVEL setLevel = -1;
 
@@ -96,7 +96,7 @@ void _spew(const char *pre, enum PO_SPEW_LEVEL level,
         const char *file, const char *func,
         int line, const char *fmt, ...)
 {
-#ifdef DEBUG
+#ifdef PO_DEBUG
     if(setLevel < 0) _spewLevel(SPEW_LEVEL_DFT);
     if(setLevel < level) return;
 #endif

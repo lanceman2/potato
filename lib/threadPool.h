@@ -21,7 +21,7 @@ struct POThreadPool_tract
 
     // When taskCount goes to zero we can recycle this tract.
     uint32_t taskCount; // number of queued tasks that are associated.
-#ifdef DEBUG
+#ifdef PO_DEBUG
     uint32_t lastTaskCount; // checks that the user is not adding tasks
     // after calling poThreadPool_finishTract().
 #endif

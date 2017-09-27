@@ -34,7 +34,7 @@ struct POThreadPool *poThreadPool_create(
     p->maxIdleTime = maxIdleTime;
     p->waitIfFull = waitIfFull;
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
     p->master = pthread_self();
 #endif
 
@@ -50,7 +50,7 @@ struct POThreadPool *poThreadPool_create(
         for(i=0; i < maxQueueLength - 1; ++i)
             task[i].next = &task[i+1];
         task[i].next = NULL; // bottom of the stack
-#ifdef DEBUG
+#ifdef PO_DEBUG
         p->tasks.unusedLength = maxQueueLength;
 #endif
     }
@@ -71,7 +71,7 @@ struct POThreadPool *poThreadPool_create(
         worker[i].pool = p;
         worker[i].next = NULL;
         condInit(&worker[i].cond);
-#ifdef DEBUG
+#ifdef PO_DEBUG
         p->workers.unusedLength = maxNumThreads;
 #endif
     }
@@ -121,7 +121,7 @@ void workerOldIdlePopSignal(struct POThreadPool *p, double t)
     }
     worker->next = NULL;
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
     --p->workers.idleLength;
     DASSERT(p->maxNumThreads >= p->numThreads);
 #endif
@@ -168,7 +168,7 @@ bool _poThreadPool_destroy(struct POThreadPool *p)
     DASSERT(!p->tasks.back);
     DASSERT(p->numThreads == 0);
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
     memset(p->task, 0, sizeof(*p->task)*p->maxQueueLength);
     memset(p->worker, 0, sizeof(*p->worker)*p->maxNumThreads);
 #endif
@@ -176,7 +176,7 @@ bool _poThreadPool_destroy(struct POThreadPool *p)
     free(p->task);
     free(p->worker);
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
         memset(p, 0, sizeof(*p));
 #endif
 
@@ -303,7 +303,7 @@ bool workerIdleYoungPop(struct POThreadPool *p,
         // The idle worker list is empty.
     }
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
     --p->workers.idleLength;
     DASSERT(!p->workers.idleFront || p->workers.idleLength); 
 #endif
@@ -326,7 +326,7 @@ bool workerIdleYoungPop(struct POThreadPool *p,
 
     // This thread exists and it waiting on a condition variable; so
     // lets put it back to work.  ASSERT() is not removed if not
-    // DEBUG.
+    // PO_DEBUG.
     ASSERT((errno = pthread_cond_signal(&worker->cond)) == 0);
 
     // Check and remove extra old unemployed threads.
@@ -458,7 +458,7 @@ _poThreadPool_callback_t lookForWork(struct POThreadPool *p,
             DASSERT(task == p->tasks.back);
             p->tasks.back = NULL;
         }
-#ifdef DEBUG
+#ifdef PO_DEBUG
         --p->tasks.queueLength;
 #endif
 
@@ -507,7 +507,7 @@ _poThreadPool_callback_t lookForWork(struct POThreadPool *p,
         // Task is moved to the unused stack
         task->next = p->tasks.unused;
         p->tasks.unused = task;
-#ifdef DEBUG
+#ifdef PO_DEBUG
         ++p->tasks.unusedLength;
 #endif
 
@@ -555,7 +555,7 @@ bool lastWorkerSignalCleanup(struct POThreadPool *p)
             // This is the last thread.  Signal the master
             // on the way out.
             ASSERT((errno = pthread_cond_signal(&p->cond)) == 0);
-#ifdef DEBUG
+#ifdef PO_DEBUG
             p->cleanup = false; // sanity check
 #endif
         }
@@ -685,7 +685,7 @@ static void
             p->workers.idleFront = worker;
         }
         p->workers.idleBack = worker;
-#ifdef DEBUG
+#ifdef PO_DEBUG
         ++p->workers.idleLength;
 #endif
 
@@ -720,7 +720,7 @@ static void
     worker->next = p->workers.unused;
     p->workers.unused = worker;
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
     ++p->workers.unusedLength;
     DASSERT(p->maxNumThreads > p->numThreads);
 #endif
@@ -797,7 +797,7 @@ bool workerUnusedPop(struct POThreadPool *p,
     p->workers.unused = worker->next;
     worker->next = NULL;
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
     --p->workers.unusedLength;
 #endif
 
@@ -887,7 +887,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
         // Next try we should have a free task struct to queue with
         // or a free worker thread to run with.
         NOTICE(
-#ifdef DEBUG
+#ifdef PO_DEBUG
                 "Using all %d tasks "
                 "and general queue with %d tasks, waiting now\n",
                 p->maxQueueLength,
@@ -938,7 +938,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
         p->tasks.back = task;
         task->next = NULL;
 
-#ifdef DEBUG
+#ifdef PO_DEBUG
         ++p->tasks.queueLength;
         --p->tasks.unusedLength;
 #endif
@@ -969,7 +969,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
     task->userCallback = callback;
     task->userData = callbackData;
     task->tract = tract;
-#ifdef DEBUG
+#ifdef PO_DEBUG
     --p->tasks.unusedLength;
 #endif
 
@@ -1045,7 +1045,7 @@ poThreadPool_checkTractFinish(struct POThreadPool *p,
         memset(tract, 0, sizeof(*tract));
         ret = true;
     }
-#ifdef DEBUG
+#ifdef PO_DEBUG
     else
     {
         if(tract->lastTaskCount != 0)
