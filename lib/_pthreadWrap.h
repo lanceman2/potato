@@ -26,7 +26,7 @@ bool _mutexTryLock(pthread_mutex_t *mutex)
         case EBUSY:
             return false; // we do NOT have the lock
         default:
-            VASSERT(0, "pthread_mutex_trylock() failed\n");
+            VASSERT(0, "pthread_mutex_trylock() failed");
     }
     return false; // oh shit
 }
@@ -38,7 +38,7 @@ bool _mutexLock(pthread_mutex_t *mutex)
     {
         if(errno != EINTR)
             return VASSERT(0, "pthread_mutex_lock() failed");
-        WARN("pthread_mutex_lock() was interrupted by a signal\n");
+        WARN("pthread_mutex_lock() was interrupted by a signal");
     }
     return false;
 }
@@ -50,7 +50,7 @@ _MutexTryLock(pthread_mutex_t *mutex, const char *file, int line)
 {
     bool ret = _mutexTryLock(mutex);
     if(!ret)
-        ERROR("%s:%d %s failed\n", file, line, __func__);
+        ERROR("%s:%d:%s() failed", file, line, __func__);
     return ret;
 }
 
@@ -59,7 +59,7 @@ _MutexLock(pthread_mutex_t *mutex, const char *file, int line)
 {
     if(!_mutexTryLock(mutex))
     {
-        ERROR("%s:%d %s blocked\n", file, line, __func__);
+        ERROR("%s:%d:%s() blocked", file, line, __func__);
         return _mutexLock(mutex);
     }
     return false;

@@ -80,7 +80,7 @@ struct POThreadPool *poThreadPool_create(
     condInit(&p->cond);
 
     INFO("Created threadPool with queue length %d, "
-        "%d available threads\n",
+        "%d available threads",
         maxQueueLength,
         maxNumThreads);
 
@@ -129,7 +129,7 @@ void workerOldIdlePopSignal(struct POThreadPool *p, double t)
     // Wake up this worker.
     ASSERT((errno = pthread_cond_signal(&worker->cond)) == 0);
 
-    INFO("signaled thread %ld idle %.2lf seconds\n",
+    INFO("signaled thread %ld idle %.2lf seconds",
         (unsigned long) worker->thread, t - worker->lastWorkTime);
 }
 
@@ -191,7 +191,7 @@ bool poThreadPool_destroy(struct POThreadPool *p)
 {
     DASSERT(p);
 
-    DSPEW("\n");
+    DSPEW();
     DASSERT(pthread_equal(pthread_self(), p->master));
 
     mutexLock(&p->mutex);
@@ -384,7 +384,7 @@ _poThreadPool_callback_t lookForWork(struct POThreadPool *p,
         void **userData)
 {
     // We can find tasks from 3 kinds of sources.
-    DSPEW("\n");
+    DSPEW();
 
     DASSERT(worker >= p->worker);
     DASSERT(worker <= &p->worker[
@@ -522,7 +522,7 @@ _poThreadPool_callback_t lookForWork(struct POThreadPool *p,
 
     if(worker->tract)
     {
-        DSPEW("no work for tract(%p)\n", worker->tract);
+        DSPEW("no work for tract(%p)", worker->tract);
         // This worker was working on a tract, but now there is no work
         // available now.  The tract still exists for the user, but
         // there is no need to bind this worker to this particular tract
@@ -599,7 +599,7 @@ static void
     DASSERT(p->numThreads <= p->maxNumThreads);
 
     // extra spaces to line up with other print below
-    INFO("adding thread, there are now %"PRIu32" threads\n",
+    INFO("adding thread, there are now %"PRIu32" threads",
             p->numThreads);
 
     // Now tell the manager thread to proceed:
@@ -615,7 +615,7 @@ static void
 
         DASSERT(!worker->tract ||
             (worker->tract->worker == worker));
-        DSPEW("tract(%p)\n", worker->tract);
+        DSPEW("tract(%p)", worker->tract);
 
 
         ////|                                                  /////
@@ -625,13 +625,13 @@ static void
             /////////// FINISHED ACCESSING POOL DATA ///////////
              //////////////////////////////////////////////////
 
-        DSPEW("starting task\n");
+        DSPEW("starting task");
 
         //////////////// go to work on the task ///////////////////
         userCallback(userData); // working callback
         ////////////////// finished work on task //////////////////
 
-        DSPEW("finished task\n");
+        DSPEW("finished task");
 
 
              /////////////////////////////////////////////////|
@@ -713,7 +713,7 @@ static void
 
     --p->numThreads;
 
-    INFO("removing thread, there are now %"PRIu32" threads\n",
+    INFO("removing thread, there are now %"PRIu32" threads",
                 p->numThreads);
 
     // put this worker in the unused worker stack
@@ -753,7 +753,7 @@ void launchWorkerThread(struct POThreadPool *p,
 #if 0 // For Debugging stack size.
     size_t stackSize;
     ASSERT((errno = pthread_attr_getstacksize(&attr, &stackSize)) == 0);
-    ERROR("stacksize= %zu MBytes\n", stackSize/(1024*1024));
+    ERROR("stacksize= %zu MBytes", stackSize/(1024*1024));
 #endif
 
 #ifdef PO_THREADPOOL_STACKSIZE
@@ -805,7 +805,7 @@ bool workerUnusedPop(struct POThreadPool *p,
     DASSERT(!p->tasks.back);
     DASSERT(!p->tasks.front);
     DVASSERT(!p->tasks.queueLength,
-            "p->tasks.queueLength=%d\n", p->tasks.queueLength);
+            "p->tasks.queueLength=%d", p->tasks.queueLength);
 
     worker->userCallback = callback;
     worker->userData = callbackData;
@@ -889,12 +889,12 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
         NOTICE(
 #ifdef PO_DEBUG
                 "Using all %d tasks "
-                "and general queue with %d tasks, waiting now\n",
+                "and general queue with %d tasks, waiting now",
                 p->maxQueueLength,
                 p->tasks.queueLength
 #else
                 "We ran out of tasks using all %d queued tasks, "
-                "waiting now\n",
+                "waiting now",
                 p->maxQueueLength
 #endif
                 );
@@ -998,7 +998,7 @@ bool poThreadPool_runTask(struct POThreadPool *p,
 
     mutexLock(&p->mutex);
 
-    DSPEW("\n");
+    DSPEW();
 
     bool ret;
     ret = _poThreadPool_runTask(p, tract,
@@ -1016,7 +1016,7 @@ bool poThreadPool_checkIdleThreadTimeout(struct POThreadPool *p)
     DASSERT(p);
     DASSERT(p->numThreads <= p->maxNumThreads);
 
-    DSPEW("\n");
+    DSPEW();
 
     mutexLock(&p->mutex);
 

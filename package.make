@@ -19,7 +19,7 @@ IN_VARS := PO_DEBUG
 
 ifdef DEBUG
 PO_DEBUG := \#define PO_DEBUG
-CPPFLAGS := -DPO_DEBUG
+CPPFLAGS += -DPO_DEBUG
 else
 PO_DEBUG := //\#define PO_DEBUG is not defined in this build
 endif

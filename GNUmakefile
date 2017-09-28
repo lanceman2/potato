@@ -1,7 +1,7 @@
 
 -include config.make
 
-SUBDIRS := lib include interactive_tests docs
+SUBDIRS := lib include docs interactive_tests
 
 # optional stuff
 ifdef BUILDTESTS
