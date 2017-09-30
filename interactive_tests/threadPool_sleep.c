@@ -78,7 +78,7 @@ int runScenario(uint32_t totalTasks, uint32_t maxNumThreads)
         poThreadPool_runTask(p, 0, task, 0);
 
     // This will block until all threads finish.
-    poThreadPool_destroy(p);
+    poThreadPool_tryDestroy(p, PO_THREADPOOL_LONGTIME);
 
     printf("\nfinished in %g seconds\n\n", poTime_getDouble() - tstart);
 

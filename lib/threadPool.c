@@ -3,8 +3,7 @@
 // Note: Reading and writing errno is thread safe.  errno is a magic CPP
 // macro that looks like a global variable.
 
-static inline void *
-alloc(size_t s)
+static inline void *alloc(size_t s)
 {
     void *ret;
     ret = malloc(s);
@@ -22,6 +21,10 @@ struct POThreadPool *poThreadPool_create(
         uint32_t maxIdleTime/*micro-seconds*/)
 {
     struct POThreadPool *p;
+
+    DASSERT(maxQueueLength < 0xFFFFFFF0); // a stupid large amount
+    DASSERT(maxNumThreads < 0xFFFFFFF0); // a stupid large amount
+    DASSERT(maxIdleTime < 0xFFFFFFF0); // a stupid large amount
 
     p = alloc(sizeof(*p));
     if(maxQueueLength)
@@ -135,11 +138,14 @@ void workerOldIdlePopSignal(struct POThreadPool *p, double t)
 
 
 // We need a threadPool mutex lock to call this.
-bool _poThreadPool_destroy(struct POThreadPool *p)
+uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
+        uint32_t timeOut /*milli-seconds*/)
 {
     DASSERT(p);
     DASSERT(p->numThreads <= p->maxNumThreads);
     DASSERT(!p->cleanup);
+
+    // TODO: apply timeOut
 
     double t;
     t = poTime_getDouble();
@@ -154,14 +160,49 @@ bool _poThreadPool_destroy(struct POThreadPool *p)
         workerOldIdlePopSignal(p, t);
     }
 
-    if(p->numThreads > 0)
+    if(p->numThreads > 0 && timeOut == PO_THREADPOOL_LONGTIME)
     {
         p->cleanup = true;
         // Wait for the last thread to finish.  The last thread to finish
         // will signal us on the way out.
         condWait(&p->cond, &p->mutex);
-        DASSERT(!p->cleanup); // debug sanity check
     }
+    else if(p->numThreads > 0 && timeOut)
+    {
+        struct timeval now;
+        struct timespec timeout;
+        ASSERT(gettimeofday(&now, 0) == 0);
+        timeout.tv_sec = now.tv_sec;
+        if(timeOut > 1000000)
+            timeout.tv_sec += timeOut/1000000;
+        timeout.tv_nsec = now.tv_usec * 1000 + timeOut%1000000;
+        if(timeout.tv_nsec > 1000000000)
+        {
+            timeout.tv_sec += timeout.tv_nsec/1000000000;
+            timeout.tv_nsec %= 1000000000;
+        }
+
+        p->cleanup = true;
+        // Wait for the last thread to finish.  The last thread to finish
+        // will signal us on the way out.
+        int ret;
+        ret = condTimedWait(&p->cond, &p->mutex, &timeout);
+        if(ret == ETIMEDOUT)
+        {
+            ASSERT(p->numThreads);
+            WARN("timed out in %g seconds\n", timeOut/1000.0);
+        }
+    }
+
+    if(p->numThreads)
+    {
+        // TODO: add all the queued tasks to this return value.
+        WARN("%"PRIu32"working task threads and add code here ...\n",
+            p->numThreads);
+        return p->numThreads;
+    }
+
+    DASSERT(!p->cleanup); // debug sanity check 
 
     // The General Queue should be empty now.
     DASSERT(!p->tasks.front);
@@ -182,12 +223,13 @@ bool _poThreadPool_destroy(struct POThreadPool *p)
 
     free(p);
 
-    return false; // success
+    return 0; // success
 }
 
 
 // Waits for current jobs/requests to finish and then cleans up. 
-bool poThreadPool_destroy(struct POThreadPool *p)
+uint32_t poThreadPool_tryDestroy(struct POThreadPool *p,
+        uint32_t timeOut /*milli-seconds*/)
 {
     DASSERT(p);
 
@@ -196,8 +238,8 @@ bool poThreadPool_destroy(struct POThreadPool *p)
 
     mutexLock(&p->mutex);
 
-    bool ret;
-    ret = _poThreadPool_destroy(p);
+    uint32_t ret;
+    ret = _poThreadPool_tryDestroy(p, timeOut);
 
     mutexUnlock(&p->mutex);
 
@@ -246,10 +288,8 @@ bool tractHasRunningWorker(struct POThreadPool *p,
     if(tract && tract->worker)
     {
         DASSERT(tract->worker >= p->worker);
-        DASSERT(tract->worker <= &p->worker[
-                p->maxNumThreads-1]);
-        DVASSERT(tract == tract->worker->tract,
-                "tract(%p)", tract);
+        DASSERT(tract->worker <= &p->worker[p->maxNumThreads-1]);
+        DVASSERT(tract == tract->worker->tract, "tract(%p)", tract);
 
         return true;
     }
@@ -261,11 +301,12 @@ bool tractHasRunningWorker(struct POThreadPool *p,
 
 // This pops a young worker off the back of the idle stack (list) of
 // workers.  The idle list is doubly linked so that we may remove the
-// older workers from the front as they time-out due to have no work for a
-// long time.  This also makes the worker ready to work (run) its' thread.
-// Finally the idle worker threads are signaled here to go back to work.
-// We assume (code is correct) that the worker is blocking on a call to
-// pthread_cond_wait(), condWait() being a wrapper of pthread_cond_wait().
+// older workers from the front as they time-out due to having no work for
+// a long time.  This also makes the worker ready to work (run) its'
+// thread.  Finally the idle worker threads are signaled here to go back
+// to work.  We assume (code is correct) that the worker is blocking on a
+// call to pthread_cond_wait(), condWait() being a wrapper of
+// pthread_cond_wait().
 static inline
 bool workerIdleYoungPop(struct POThreadPool *p,
         struct POThreadPool_tract *tract,
@@ -1042,6 +1083,7 @@ poThreadPool_checkTractFinish(struct POThreadPool *p,
 
     if(tract->taskCount == 0 && !tract->worker)
     {
+        // reset the tract.
         memset(tract, 0, sizeof(*tract));
         ret = true;
     }
@@ -1051,7 +1093,7 @@ poThreadPool_checkTractFinish(struct POThreadPool *p,
         if(tract->lastTaskCount != 0)
             // We make sure that the stupid user is not adding
             // tasks to this tract.
-            DASSERT(tract->lastTaskCount >= tract->taskCount);
+            ASSERT(tract->lastTaskCount >= tract->taskCount);
         tract->lastTaskCount = tract->taskCount;
     }
 #endif

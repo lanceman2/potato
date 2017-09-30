@@ -30,6 +30,11 @@ struct POThreadPool_tract
 
 /** create a potato thread pool
  *
+ * Cutting down on thread contention by increasing design complexity in
+ * the thread pool.  The user will have decreased design complexity and
+ * increased performance in the limit of large number of service user
+ * channels.  We introduce the thread "tract".  See poThreadPool_runTask().
+ *
  * Create a potato thread pool with a set maximum number of working
  * threads, \p maxNumThreads, and a waiting task queue of length
  * \p maxQueueLength.
@@ -63,13 +68,29 @@ struct POThreadPool *poThreadPool_create(
         uint32_t maxQueueLength, uint32_t maxNumThreads,
         uint32_t maxIdleTime /*micro-seconds*/);
 
-/** Waits for current jobs/requests to finish and then cleans up
- * all memory and thread resources.
+
+/** Macro for infinite timeout used in poThreadPool_tryDestroy() */
+#define PO_THREADPOOL_LONGTIME 0xFFFFFFFF
+/** Macro for error return value from poThreadPool_tryDestroy() */
+#define PO_THREADPOOL_ERROR    0xFFFFFFFF
+
+/** Waits for all the current task requests to finish and then cleans up
+ * all memory and thread resources, but only if all tasks are finished.
  *
- * \return false on success, and true on the unlikely error case.
+ * This will not interrupt any threads that are working on tasks.
+ *
+ * \param timeOut the time to wait in milli-seconds for all tasks to
+ * finish.  If \p timeOut is PO_THREADPOOL_LONGTIME this will wait
+ * indefinitely.
+ *
+ * \return 0 on if all queued and running tasks completed, returns the
+ * number of possible uncompleted tasks from the worker threads and the
+ * number in the queue that have not completed, and returns
+ * PO_THREADPOOL_ERROR in the unlikely error case.
  */
 extern
-bool poThreadPool_destroy(struct POThreadPool *p);
+uint32_t poThreadPool_tryDestroy(struct POThreadPool *p,
+        uint32_t timeOut /*milli-seconds*/);
 
 
 /** add a task to the thread pool.
@@ -173,6 +194,11 @@ bool poThreadPool_checkIdleThreadTimeout(struct POThreadPool *p);
 
 /** Checks if the tract is running a thread or has any pending thread
  * tasks.
+ *
+ * \param p a pointer to a struct POThreadPool that was returned from
+ * poThreadPool_create().
+ * \param tract a pointer to a tract that was used in
+ * poThreadPool_runTask().
  *
  * \return true when and if there are no pending or running tasks
  * for this tract, and resets the tract data structure for reuse, else

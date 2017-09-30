@@ -1,6 +1,3 @@
-#include <errno.h>
-#include <pthread.h>
-
 
 static inline
 bool mutexInit(pthread_mutex_t *mutex)
@@ -106,11 +103,33 @@ static inline
 bool condWait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 {
     errno = 0;
-    while((errno = pthread_cond_wait(cond, mutex)) != 0)
+    if((errno = pthread_cond_wait(cond, mutex)) != 0)
     {
         if(errno != EINTR)
             return VASSERT(0, "pthread_cond_wait() failed");
         WARN("pthread_cond_wait() was interrupted by a signal\n");
     }
     return false;
+}
+
+static inline
+int condTimedWait(pthread_cond_t *cond, pthread_mutex_t *mutex,
+        const struct timespec *abstime)
+{
+    errno = 0;
+    if((errno = pthread_cond_timedwait(cond, mutex, abstime)) != 0)
+    {
+        if(errno != EINTR && errno != ETIMEDOUT)
+        {
+            VASSERT(0, "pthread_cond_timedwait() failed");
+            return errno;
+        }
+        else if(errno == EINTR)
+            WARN("pthread_cond_timedwait() was interrupted by a signal\n");
+        // errno == ETIMEDOUT is the time expired case that will be
+        // common.
+        else if(errno == ETIMEDOUT)
+            WARN("pthread_cond_timedwait() time expired");
+    }
+    return errno;
 }

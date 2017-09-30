@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <stdio.h>
+#include <sys/time.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -9,12 +10,13 @@
 #include <pthread.h>
 #include <stdarg.h>
 
+
 // A tract is a group of associated tasks that run in order and do not run
 // simultaneously.  Tasks are not required to be associated with a tract.
 #include "debug.h"
 #include "tIme.h"
-#include "threadPool.h"
 #include "_pthreadWrap.h" // mutexInit() mutexLock() etc...
+#include "threadPool.h"
 
 /* This is a bunch of linked lists, queues and stacks, that may be singly
  * linked (simple stack) or doubly linked (because we need to pull from
@@ -47,7 +49,7 @@ struct POThreadPool_task
     //          Tract queue   added only when General queue
     //          is empty, so one worker gets particular tract
     //          tasks.
-    //  * POThreadPool_tasks::unsused
+    //  * POThreadPool_tasks::unused
     //          Unused
     //
     struct POThreadPool_task *next;
@@ -99,13 +101,13 @@ struct POThreadPool_tasks
     struct POThreadPool_task *back, *front, // General queue
         // The unused task structs for this queue.  Keeps tabs on the
         // memory that is not counted in the list in "front" and "back" or
-        // in the tract structs.  Singly linked stack list.
+        // are in the tract structs.  Singly linked stack list.
         *unused; // this is a stack top
     // Others lists for in each tract
 
 #ifdef PO_DEBUG
-    // These lengths must add to PO_THREADPOOL_QUEUE_LENGTH
-    uint32_t queueLength, unusedLength, tractLength; 
+    // These lengths must add to maxQueueLength
+    uint32_t queueLength, unusedLength; 
 #endif
 };
 
@@ -184,7 +186,7 @@ struct POThreadPool
     uint32_t numThreads; // number of pthreads that now exist
     // numThreads = (idle threads) + (working threads)
 
-    struct POThreadPool_tasks tasks;
+    struct POThreadPool_tasks tasks; // lists of tasks
     struct POThreadPool_task *task; // allocated memory for tasks
 
     // Their are three kinds of workers in worker[] array:
@@ -194,7 +196,8 @@ struct POThreadPool
     // idle and unused list
     struct POThreadPool_workers workers;
     struct POThreadPool_worker *worker; // allocated memory for tasks
-    // and working threads are not in a list.
+    // and working threads are not in a list since they have threads
+    // that will act for them when they finish.
 
 
     pthread_mutex_t mutex; // protects POThreadPool data structures
@@ -202,13 +205,13 @@ struct POThreadPool
 
     // flag for when main (master) thread is blocking
     // i.e. when calling pthread_cond_wait()
-    bool cleanup; // blocking in poThreadPool_destroy()
+    bool cleanup; // blocking in poThreadPool_tryDestroy()
 
     // flag masks that poThreadPool_runTask() is calling
     // pthread_cond_wait() because there is no task room
     // in the General or tracts queues.
     bool taskWaitingToBeRun,
-         waitIfFull; // wait if queues are full or return.
-
+        // poThreadPool_runTask() waits if queues are full, otherwise not.
+        waitIfFull;
     uint32_t maxQueueLength, maxNumThreads, maxIdleTime;
 };
