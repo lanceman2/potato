@@ -3,6 +3,7 @@ libpotato.so_SOURCES := debug.c murmurHash.c threadPool.c
 
 INSTALL_DIR = $(PREFIX)/lib 
 
+CPPFLAGS := -DSPEW_LEVEL_DEBUG
 
 # uncomment TESTS to build tests
 # or
