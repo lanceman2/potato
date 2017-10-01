@@ -128,8 +128,8 @@ int condTimedWait(pthread_cond_t *cond, pthread_mutex_t *mutex,
             WARN("pthread_cond_timedwait() was interrupted by a signal\n");
         // errno == ETIMEDOUT is the time expired case that will be
         // common.
-        else if(errno == ETIMEDOUT)
-            WARN("pthread_cond_timedwait() time expired");
+        //else if(errno == ETIMEDOUT)
+          //  WARN("pthread_cond_timedwait() time expired");
     }
     return errno;
 }

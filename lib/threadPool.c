@@ -139,7 +139,7 @@ void workerOldIdlePopSignal(struct POThreadPool *p, double t)
 
 // We need a threadPool mutex lock to call this.
 uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
-        uint32_t timeOut /*milli-seconds*/)
+        uint32_t timeOut /*milli-seconds = 1/1000 sec*/)
 {
     DASSERT(p);
     DASSERT(p->numThreads <= p->maxNumThreads);
@@ -173,8 +173,8 @@ uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
         struct timespec timeout;
         ASSERT(gettimeofday(&now, 0) == 0);
         timeout.tv_sec = now.tv_sec;
-        if(timeOut > 1000000)
-            timeout.tv_sec += timeOut/1000000;
+        if(timeOut >= 1000)
+            timeout.tv_sec += timeOut/1000;
         timeout.tv_nsec = now.tv_usec * 1000 + timeOut%1000000;
         if(timeout.tv_nsec > 1000000000)
         {
@@ -187,17 +187,29 @@ uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
         // will signal us on the way out.
         int ret;
         ret = condTimedWait(&p->cond, &p->mutex, &timeout);
-        if(ret == ETIMEDOUT)
-        {
-            ASSERT(p->numThreads);
+
+#ifdef SPEW_LEVEL_WARN
+        if(ret == ETIMEDOUT && p->numThreads)
             WARN("timed out in %g seconds\n", timeOut/1000.0);
-        }
+#endif
+        if(ret != 0)
+            // We where never got the signal but the cleanup flag may or
+            // may not be set.  Either way we must reset the cleanup
+            // flag.
+            p->cleanup = false;
+#ifdef PO_DEBUG
+        else // if(ret == 0)
+            // We did get a signal therefore the cleanup flag must
+            // have been reset.
+            ASSERT(!p->cleanup); // debug sanity check
+#endif
     }
 
     if(p->numThreads)
     {
         // TODO: add all the queued tasks to this return value.
-        WARN("%"PRIu32"working task threads and add code here ...\n",
+        WARN("There are %"PRIu32
+            " working task threads\n",
             p->numThreads);
         return p->numThreads;
     }
