@@ -146,32 +146,31 @@ struct POThreadPool_worker
 
 struct POThreadPool_workers
 {
-    // Their are three kinds of workers in worker[] array: idle (has a
-    // pthread that is blocked), unused (have no task), and working (has a
-    // thread and is working on a task).
+    // There are three kinds of workers in worker[] array:
+    //    - idle (has a pthread that is blocked),
+    //    - unused (have no thread or task), and
+    //    - working (has a thread and is working on a task).
 
     struct POThreadPool_worker
-        // A doubly listed list of workers with threads
-        // that are not working on a task.  Like a queue line at the DMV.
+        // A doubly listed list of workers with threads that are not
+        // working on a task.  Like a queue line at the DMV.
         *idleBack, *idleFront, // idle list youngest at the back
         // We define this list like:
         // idleFront->next = NULL and idleBack->prev = NULL
-        // We get fresher workers from the back of the line,
-        // and old workers in the front get retired first.
-        // workers thatrunTaskMutex; // protects poThreadPool_runTask()
-        // call do not have a thread or task unused is a stack top (prev
-        // not used).
+        // We get fresher workers from the back of the line, and old
+        // workers in the front get retired first.
         *unused;
+        // The working workers are not keep in a list ... yet.  We may
+        // need them listed so we can detect hung threads without doing a
+        // O(N) search.  We'd order the working threads from shortest time
+        // working to longest time working.
 
 #ifdef PO_DEBUG
-    // PO_THREADPOOL_MAX_NUM_THREADS = 
-    // unusedLength + idleLength +  working threads =
+    // maxNumThreads = 
+    // unusedLength + idleLength + "working threads" =
     // unusedLength + POThreadPool::numThreads
     uint32_t idleLength, unusedLength;
 #endif
-    // We don't need a list of worker threads that are running/working on
-    // a task, since the OS (operating system) handles that list quite
-    // well without more code.
 };
 
 

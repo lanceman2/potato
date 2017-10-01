@@ -48,7 +48,10 @@ struct POThreadPool_tract
  *  \param maxQueueLength  the maximum number of tasks that can
  *  be queued, waiting to be run via a worker thread.  If \p
  *  maxQueueLength is 0 the created thread pool will not queue
- *  any tasks in a wait queue.
+ *  any tasks in a wait queue.  If you use tracts of tasks, it's
+ *  a good idea to have \p maxQueueLength large enough to hold
+ *  all the tasks that will be blocked by running tasks that are
+ *  in the same tract.
  *  \param maxNumThreads  the maximum number of worker threads
  *  that can exist.  This does not include the master thread that
  *  calls poThreadPool_runTask().
@@ -83,6 +86,12 @@ struct POThreadPool *poThreadPool_create(
  * finish.  If \p timeOut is PO_THREADPOOL_LONGTIME this will wait
  * indefinitely.
  *
+ * \param timeOut in milli-seconds.  poThreadPool_tryDestroy() will return
+ * in \p timeOut milli-seconds.  If \p timeOut is PO_THREADPOOL_LONGTIME
+ * poThreadPool_tryDestroy() will not return until all tasks are finished.
+ * With \p timeOut in milliseconds and being a \a uint32_t, the longest
+ * timeout is a little longer than 49.7 days (= 2^32 /(3600 * 1000 * 24)).
+ *
  * \return 0 on if all queued and running tasks completed, returns the
  * number of possible uncompleted tasks from the worker threads and the
  * number in the queue that have not completed, and returns
@@ -90,7 +99,7 @@ struct POThreadPool *poThreadPool_create(
  */
 extern
 uint32_t poThreadPool_tryDestroy(struct POThreadPool *p,
-        uint32_t timeOut /*milli-seconds*/);
+        uint32_t timeOut /*in milli-seconds. 1 milli-sec = 1/1000 of sec*/);
 
 
 /** add a task to the thread pool.
@@ -151,9 +160,9 @@ uint32_t poThreadPool_tryDestroy(struct POThreadPool *p,
  * concurrently.  Without this "tract" hock you may have to have all
  * threads whither they are related or not share mutexes (or like thing).
  * Without tracts, there would be lots more contention in the case where
- * most threads are not sharing much data, or are shall we say
- * "unrelated".  Tracts make potato faster than other web servers that do
- * not have "tracts", or sometime that provides tract-like behavior.
+ * most threads are not sharing much data, or are shall we say threads
+ * are "unrelated".  Tracts make potato faster than other web servers that
+ * do not have "tracts", or sometime that provides tract-like behavior.
  * It's pretty simple.
  *
  * The user needs to track their tracts and manage the memory of their
@@ -161,7 +170,6 @@ uint32_t poThreadPool_tryDestroy(struct POThreadPool *p,
  * dynamically allocating them.  This simplifies the interfaces and code
  * of the potato thread pool considerably.
  *
-
  * \param p returned from a call to poThreadPool_create()
  * \param tract may be NULL (0) to have the task unrelated to any other
  * tasks, pointing to memory that has been zeroed to have this task
@@ -172,15 +180,17 @@ uint32_t poThreadPool_tryDestroy(struct POThreadPool *p,
  * \param callbackData a pointer to pass to the \p callback function.
  *
  * \return false on success and the task will be running or queued to
- * run, or true in the case of an error.
+ * run, or true in the case there the time out has expired or other
+ * error case.
  */
 extern
 bool poThreadPool_runTask(struct POThreadPool *p,
+        //uint32_t timeOut, /*in milliseconds = 10^(-3) seconds*/
         struct POThreadPool_tract *tract,
         void *(*callback)(void *), void *callbackData);
 
 
-/** Check for and remove a timed out thread from the pool.
+/** Check for and remove a timed out idle thread from the pool.
  *
  * \param p a struct POThreadPool pointer returned from
  * poThreadPool_create().

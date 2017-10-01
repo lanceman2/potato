@@ -131,6 +131,22 @@ extern void _spewLevel(enum PO_SPEW_LEVEL level);
 #endif
 
 
+#ifdef SPEW_LEVEL_DEBUG
+#undef SPEW_LEVEL_DEBUG
+#endif
+#ifdef SPEW_LEVEL_INFO
+#undef SPEW_LEVEL_INFO
+#endif
+#ifdef SPEW_LEVEL_WARN
+#undef SPEW_LEVEL_WARN
+#endif
+#ifdef SPEW_LEVEL_NOTICE
+#undef SPEW_LEVEL_NOTICE
+#endif
+#ifdef SPEW_LEVEL_ERROR
+#undef SPEW_LEVEL_ERROR
+#endif
+
 
 #ifdef PO_DEBUG
 #  define DASSERT(val)            _VASSERT(val, "")

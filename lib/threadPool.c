@@ -172,14 +172,18 @@ uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
         struct timeval now;
         struct timespec timeout;
         ASSERT(gettimeofday(&now, 0) == 0);
-        timeout.tv_sec = now.tv_sec;
-        if(timeOut >= 1000)
-            timeout.tv_sec += timeOut/1000;
-        timeout.tv_nsec = now.tv_usec * 1000 + timeOut%1000000;
+        timeout.tv_sec = now.tv_sec + timeOut/1000;
+        // tv_nsec is in nano seconds = 10^(-9) seconds
+        // tv_usec is in microseconds = 10^(-6) seconds
+        // timeOut in in milliseconds = 10^(-3) seconds
+        timeout.tv_nsec = now.tv_usec*1000 + (timeOut%1000)*1000000;
+    
         if(timeout.tv_nsec > 1000000000)
         {
-            timeout.tv_sec += timeout.tv_nsec/1000000000;
-            timeout.tv_nsec %= 1000000000;
+            uint64_t extraSecs;
+            extraSecs = timeout.tv_nsec/1000000000;
+            timeout.tv_sec += extraSecs;
+            timeout.tv_nsec -= extraSecs * 1000000000;
         }
 
         p->cleanup = true;
@@ -188,9 +192,9 @@ uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
         int ret;
         ret = condTimedWait(&p->cond, &p->mutex, &timeout);
 
-#ifdef SPEW_LEVEL_WARN
+#ifdef PO_DEBUG
         if(ret == ETIMEDOUT && p->numThreads)
-            WARN("timed out in %g seconds\n", timeOut/1000.0);
+            NOTICE("timed out in %g seconds", timeOut/1000.0);
 #endif
         if(ret != 0)
             // We where never got the signal but the cleanup flag may or
@@ -208,7 +212,7 @@ uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
     if(p->numThreads)
     {
         // TODO: add all the queued tasks to this return value.
-        WARN("There are %"PRIu32
+        NOTICE("There are %"PRIu32
             " working task threads\n",
             p->numThreads);
         return p->numThreads;
@@ -939,7 +943,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
         p->taskWaitingToBeRun = true;
         // Next try we should have a free task struct to queue with
         // or a free worker thread to run with.
-        NOTICE(
+        INFO(
 #ifdef PO_DEBUG
                 "Using all %d tasks "
                 "and general queue with %d tasks, waiting now",

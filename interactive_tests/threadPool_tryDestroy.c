@@ -95,14 +95,14 @@ int main(int argc, char **argv)
 {
     poDebugInit();
 
-    runScenario(10, 10, 500);
+    runScenario(10, 10, 200);
     runScenario(50, 50, 100);
     runScenario(200, 20, 100);
-    runScenario(500, 100, 1000);
-    runScenario(200, 200, 1000);
-    runScenario(200, 100, 1000);
-    runScenario(500, 500, 1000);
-    runScenario(1000, 1000, 1000);
+    runScenario(500, 100, 100);
+    runScenario(200, 200, 10);
+    runScenario(200, 100, 10);
+    runScenario(500, 500, 10);
+    runScenario(1000, 1000, 10);
 
 
     WARN("%s Successfully Exiting", argv[0]);
