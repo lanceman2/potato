@@ -1,0 +1,11 @@
+// This will be the start of the single installed potato header file
+// potato.h
+#include <inttypes.h> // uint32_t PRIu32
+#include <stdio.h>   // printf stdout
+#include <stdbool.h> // define bool true false
+
+// VERSION is set only in ../package.make
+#define PO_VERSION @VERSION@
+
+
+// Edit GNUmakefile to add more public interfaces below here:

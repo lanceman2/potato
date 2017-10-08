@@ -7,7 +7,6 @@ int main(void)
     int i=0;
     i++;
     poDebugInit();
-    SPEW_LEVEL(PO_SPEW_INFO);
     DSPEW();
     DSPEW("MORE");
     INFO();

@@ -61,19 +61,6 @@ static inline bool _assert(bool val, const char *pre,
 extern void poDebugInit(void);
 
 
-#ifdef PO_DEBUG
-
-extern void _spewLevel(enum PO_SPEW_LEVEL level);
-
-#  define SPEW_LEVEL(l)  _spewLevel(l)
-
-#else
-
-#  define SPEW_LEVEL(l)  /*empty macro*/
-
-#endif
-
-
 #define _SPEW(pre, level, fmt, ... )\
      _spew(pre, level,  __BASE_FILE__,\
         __func__, __LINE__, fmt "\n", ##__VA_ARGS__)
@@ -101,66 +88,71 @@ extern void _spewLevel(enum PO_SPEW_LEVEL level);
 ///////////////////////////////////////////////////////////////////////////
 
 
-#if defined(SPEW_LEVEL_ERROR)\
+#ifdef PO_DEBUG
+
+#  if defined(SPEW_LEVEL_ERROR)\
     || defined(SPEW_LEVEL_WARN)\
     || defined(SPEW_LEVEL_NOTICE)\
     || defined(SPEW_LEVEL_INFO)\
     || defined(SPEW_LEVEL_DEBUG)
 // We have a level set
-#else
+#  else
 // We do not have a spew level set so we
 // set it to the default that we define here:
-#  define SPEW_LEVEL_INFO
-#endif
+#    define SPEW_LEVEL_INFO
+#  endif
 
 
-#ifdef SPEW_LEVEL_DEBUG // The highest verbosity
-#  define SPEW_LEVEL_DFT PO_SPEW_DEBUG
-#endif
-#ifdef SPEW_LEVEL_INFO
-#  define SPEW_LEVEL_DFT PO_SPEW_INFO
-#endif
-#ifdef SPEW_LEVEL_NOTICE
-#  define SPEW_LEVEL_DFT PO_SPEW_NOTICE
-#endif
-#ifdef SPEW_LEVEL_WARN
-#  define SPEW_LEVEL_DFT PO_SPEW_WARN
-#else
+#  ifdef SPEW_LEVEL_DEBUG // The highest verbosity
+#    define SPEW_LEVEL_DFT PO_SPEW_DEBUG
+#  endif
+#  ifdef SPEW_LEVEL_INFO
+#    define SPEW_LEVEL_DFT PO_SPEW_INFO
+#  endif
+#  ifdef SPEW_LEVEL_NOTICE
+#    define SPEW_LEVEL_DFT PO_SPEW_NOTICE
+#  endif
+#  ifdef SPEW_LEVEL_WARN
+#    define SPEW_LEVEL_DFT PO_SPEW_WARN
+#  endif
+#  ifdef SPEW_LEVEL_ERROR
 // SPEW_LEVEL_ERROR must be defined
-#  define SPEW_LEVEL_DFT PO_SPEW_ERROR
-#endif
+#    define SPEW_LEVEL_DFT PO_SPEW_ERROR
+#  endif
 
 
-#ifdef SPEW_LEVEL_DEBUG
-#undef SPEW_LEVEL_DEBUG
-#endif
-#ifdef SPEW_LEVEL_INFO
-#undef SPEW_LEVEL_INFO
-#endif
-#ifdef SPEW_LEVEL_WARN
-#undef SPEW_LEVEL_WARN
-#endif
-#ifdef SPEW_LEVEL_NOTICE
-#undef SPEW_LEVEL_NOTICE
-#endif
-#ifdef SPEW_LEVEL_ERROR
-#undef SPEW_LEVEL_ERROR
-#endif
+#  ifdef SPEW_LEVEL_DEBUG
+#  undef SPEW_LEVEL_DEBUG
+#  endif
+#  ifdef SPEW_LEVEL_INFO
+#  undef SPEW_LEVEL_INFO
+#  endif
+#  ifdef SPEW_LEVEL_WARN
+#  undef SPEW_LEVEL_WARN
+#  endif
+#  ifdef SPEW_LEVEL_NOTICE
+#  undef SPEW_LEVEL_NOTICE
+#  endif
+#  ifdef SPEW_LEVEL_ERROR
+#  undef SPEW_LEVEL_ERROR
+#  endif
 
 
-#ifdef PO_DEBUG
 #  define DASSERT(val)            _VASSERT(val, "")
 #  define DVASSERT(val, fmt, ...) _VASSERT(val, fmt, ##__VA_ARGS__)
 #  define WARN(fmt, ...)   _SPEW("WARN: ", PO_SPEW_WARN, fmt, ##__VA_ARGS__)
 #  define NOTICE(fmt, ...) _SPEW("NOTICE: ", PO_SPEW_NOTICE, fmt, ##__VA_ARGS__)
 #  define INFO(fmt, ...)   _SPEW("INFO: ", PO_SPEW_INFO, fmt, ##__VA_ARGS__)
 #  define DSPEW(fmt, ...)  _SPEW("DEBUG: ", PO_SPEW_DEBUG, fmt, ##__VA_ARGS__)
+
 #else
+
 #  define DASSERT(val)            /*empty marco*/
 #  define DVASSERT(val, fmt, ...) /*empty marco*/
 #  define WARN(fmt, ...)          /*empty macro*/
 #  define NOTICE(fmt, ...)        /*empty macro*/
 #  define INFO(fmt, ...)          /*empty macro*/
 #  define DSPEW(fmt, ...)         /*empty macro*/
+
 #endif
 

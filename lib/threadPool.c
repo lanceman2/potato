@@ -1103,16 +1103,6 @@ poThreadPool_checkTractFinish(struct POThreadPool *p,
         memset(tract, 0, sizeof(*tract));
         ret = true;
     }
-#ifdef PO_DEBUG
-    else
-    {
-        if(tract->lastTaskCount != 0)
-            // We make sure that the stupid user is not adding
-            // tasks to this tract.
-            ASSERT(tract->lastTaskCount >= tract->taskCount);
-        tract->lastTaskCount = tract->taskCount;
-    }
-#endif
 
     mutexUnlock(&p->mutex);
 

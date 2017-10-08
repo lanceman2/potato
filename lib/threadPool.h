@@ -19,10 +19,6 @@ struct POThreadPool_tract
 
     // When taskCount goes to zero we can recycle this tract.
     uint32_t taskCount; // number of queued tasks that are associated.
-#ifdef PO_DEBUG
-    uint32_t lastTaskCount; // checks that the user is not adding tasks
-    // after calling poThreadPool_finishTract().
-#endif
 };
 
 /// \endcond
@@ -92,7 +88,7 @@ struct POThreadPool *poThreadPool_create(
  * With \p timeOut in milliseconds and being a \a uint32_t, the longest
  * timeout is a little longer than 49.7 days (= 2^32 /(3600 * 1000 * 24)).
  *
- * \return 0 on if all queued and running tasks completed, returns the
+ * \return 0 if all queued and running tasks completed, returns the
  * number of possible uncompleted tasks from the worker threads and the
  * number in the queue that have not completed, and returns
  * PO_THREADPOOL_ERROR in the unlikely error case.

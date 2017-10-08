@@ -64,12 +64,13 @@ struct POThreadPool_tasks
 {
     // There are 3 kinds of task lists
     //
-    //   General: General Queue Waiting to be run. Kept in back and
-    //            front here in this strp->workers.idleBackucture.  There
-    //            is just one list like this. New tasks go in the back.
-    //            This queue is used any time we have
-    //            PO_THREADPOOL_MAX_NUM_THREADS worker threads busy and we
-    //            get call to poThreadPool_runTask().
+    //   General: General Queue Waiting to be run. Kept in back and front
+    //            here in this structure.  There is just one list like
+    //            this. New tasks go in the back.  This queue is used when
+    //            we have p->maxNumThreads worker threads busy and we
+    //            get call to poThreadPool_runTask(), so long as we have
+    //            not used all the queue memory in p->tasks.
+    //
     //
     //   Unused:  Memory that is not used at this time. Kept in unused in
     //            this structure.  Just one list like this.
@@ -79,8 +80,8 @@ struct POThreadPool_tasks
     //            running worker.  This queue starts at a worker/tract.
     //            This queue is only added to when we have threads
     //            available but we are keeping the tasks of a tract from
-    //            running concurrently.  It is to keep more that one
-    //            worker working on a tract at a time.
+    //            running concurrently.  It is to keep no more than one
+    //            worker from working on a tract a given at a time.
     //
     //
     //  We only track the General and the Unused tasks here in this
