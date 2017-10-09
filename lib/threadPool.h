@@ -1,3 +1,47 @@
+/** \file threadPool.h
+ *
+ * The potato thread pool.
+ *
+ * The potato thread pool has a few features.
+ *
+ * \section thread_pool_size thread pool size
+ *
+ * The potato thread pool has a maximum number of threads that is set by
+ * the user.  The number of running threads is increases up to this
+ * maximum size by successive calls to poThreadPool_runTask() and when the
+ * maximum number of working threads is reached poThreadPool_runTask()
+ * will either block until a thread finishes a task or return an error,
+ * depending on user preferences.
+ *
+ * \section task_queue task queue
+ *
+ * The potato thread pool has a waiting queued with a user set maximum
+ * size.  All incoming tasks are prioritised by first in being run first
+ * to run with the exception that no more than one task in a "tract" can
+ * be run at a time.
+ *
+ * \section tracts tracts
+ *
+ * The user may make a group tasks that that we call a tract.  Tasks that
+ * are in a given tract never run currently with tasks that are in the
+ * same tract.  Tracts of tasks can get queued with non-tract tasks, but
+ * once a task of a given tract gets to the front of the line it will be
+ * stuck in the queue until there are no tasks in that tract running.
+ * Tasks in a tract alway run in the order in which they are asked to run
+ * via poThreadPool_runTask().
+ *
+ * If you have tasks that share resources that you want to not run
+ * concurrently, use a tract for each such a group.  Recycle the tract
+ * when you know the last task in the tract has run.  The user must manage
+ * the opaque struct POThreadPool_tract memory, but the memory cannot be
+ * recycled until poThreadPool_checkTractFinish() true.
+ *
+ * \section thread_wind_down thread wind down
+ *
+ * The user may set a maxIdleTime, in microseconds, in which idle workers
+ * threads are stopped.
+ */
+
 
 /// \cond SKIP
 
@@ -39,8 +83,6 @@ struct POThreadPool_tract
  * and the size depends on the parameters \p maxQueueLength and \p
  * maxNumThreads.
  *
- *  \param waitIfFull  if true, will cause poThreadPool_runTask()
- *  to block waiting for a free worker thread to become available.
  *  \param maxQueueLength  the maximum number of tasks that can
  *  be queued, waiting to be run via a worker thread.  If \p
  *  maxQueueLength is 0 the created thread pool will not queue
@@ -63,7 +105,6 @@ struct POThreadPool_tract
  */
 extern
 struct POThreadPool *poThreadPool_create(
-        bool waitIfFull /* otherwise run() returns if full */,
         uint32_t maxQueueLength, uint32_t maxNumThreads,
         uint32_t maxIdleTime /*micro-seconds*/);
 
@@ -167,6 +208,10 @@ uint32_t poThreadPool_tryDestroy(struct POThreadPool *p,
  * of the potato thread pool considerably.
  *
  * \param p returned from a call to poThreadPool_create()
+ * \param waitIfFull if set to true this call will block and wait
+ * for an available worker thread there are \p maxNumThreads
+ * working already, or it \p waitIffull is false this call will return
+ * true for the "would block" like error.
  * \param tract may be NULL (0) to have the task unrelated to any other
  * tasks, pointing to memory that has been zeroed to have this task
  * associated with a new task, or use a value of task set from a previous
@@ -181,6 +226,7 @@ uint32_t poThreadPool_tryDestroy(struct POThreadPool *p,
  */
 extern
 bool poThreadPool_runTask(struct POThreadPool *p,
+        bool waitIfFull,
         //uint32_t timeOut, /*in milliseconds = 10^(-3) seconds*/
         struct POThreadPool_tract *tract,
         void *(*callback)(void *), void *callbackData);

@@ -68,7 +68,7 @@ int runScenario(uint32_t totalTasks, uint32_t maxNumThreads,
         timeEstmate);
 
     struct POThreadPool *p;
-    p = poThreadPool_create(true/*waitIfFull*/,
+    p = poThreadPool_create(
         10 /*maxQueueLength*/, maxNumThreads /*maxNumThreads*/,
         100 /*maxIdleTime milli-seconds 1s/1000*/);
 
@@ -76,7 +76,7 @@ int runScenario(uint32_t totalTasks, uint32_t maxNumThreads,
 
     for(i=0; i<totalTasks; ++i)
         // this will wait then the pool is full
-        poThreadPool_runTask(p, 0, task, 0);
+        poThreadPool_runTask(p, true/*waitIfFull*/, 0, task, 0);
 
     uint32_t ret = 1;
 

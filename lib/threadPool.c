@@ -16,7 +16,6 @@ static inline void *alloc(size_t s)
 
 
 struct POThreadPool *poThreadPool_create(
-        bool waitIfFull /* otherwise run() returns if full */,
         uint32_t maxQueueLength, uint32_t maxNumThreads,
         uint32_t maxIdleTime/*micro-seconds*/)
 {
@@ -35,7 +34,6 @@ struct POThreadPool *poThreadPool_create(
     p->maxQueueLength = maxQueueLength;
     p->maxNumThreads = maxNumThreads;
     p->maxIdleTime = maxIdleTime;
-    p->waitIfFull = waitIfFull;
 
 #ifdef PO_DEBUG
     p->master = pthread_self();
@@ -883,7 +881,7 @@ bool workerUnusedPop(struct POThreadPool *p,
 // We must have the threadPool mutex lock to call this.
 static
 bool _poThreadPool_runTask(struct POThreadPool *p,
-        struct POThreadPool_tract *tract,
+        bool waitIfFull, struct POThreadPool_tract *tract,
         void *(*callback)(void *), void *callbackData)
 {
     DASSERT(p);
@@ -937,7 +935,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
         //
         // We have no tasks to queue with, i.e. the queues are full.
 
-        if(!p->waitIfFull) return true; // fail
+        if(!waitIfFull) return true; // fail
 
         DASSERT(!p->taskWaitingToBeRun);
         p->taskWaitingToBeRun = true;
@@ -958,7 +956,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
         condWait(&p->cond, &p->mutex);
         DASSERT(!p->taskWaitingToBeRun);
         // Try again.  There should be no state change up to now!
-        return _poThreadPool_runTask(p, tract, callback, callbackData);
+        return _poThreadPool_runTask(p, waitIfFull, tract, callback, callbackData);
     }
 
     if(tract)
@@ -1046,6 +1044,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
  *
  */
 bool poThreadPool_runTask(struct POThreadPool *p,
+        bool waitIfFull,
         struct POThreadPool_tract *tract,
         void *(*callback)(void *), void *callbackData)
 {
@@ -1058,7 +1057,7 @@ bool poThreadPool_runTask(struct POThreadPool *p,
     DSPEW();
 
     bool ret;
-    ret = _poThreadPool_runTask(p, tract,
+    ret = _poThreadPool_runTask(p, waitIfFull, tract,
             callback, callbackData);
 
     mutexUnlock(&p->mutex);
