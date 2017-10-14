@@ -109,14 +109,17 @@ struct POThreadPool_tract
  *
  * \param maxNumThreads  the maximum number of worker threads that can
  * exist.  This does not include the master thread that calls
- * poThreadPool_runTask().\ \param maxQueueLength  the maximum number of
- * tasks that can be queued, waiting to be run via a worker thread.  If \p
- * maxQueueLength is 0 the created thread pool will not queue any tasks in
- * a wait queue.  If you use tracts of tasks, it's a good idea to have \p
- * maxQueueLength large enough to hold all the tasks that will be blocked
- * by running tasks that are in the same tract.  \param maxIdleTime  is
- * the time that an idle worker thread will wait idly until it is
- * destroyed in the next user invoked action, like
+ * poThreadPool_runTask().
+ *
+ * \param maxQueueLength  the maximum number of tasks that can be queued,
+ * waiting to be run via a worker thread.  If \p maxQueueLength is 0 the
+ * created thread pool will not queue any tasks in a wait queue.  If you
+ * use tracts of tasks, it's a good idea to have \p maxQueueLength large
+ * enough to hold all the tasks that will be blocked by running tasks that
+ * are in the same tract.
+ *
+ * \param maxIdleTime  is the time that an idle worker thread will wait
+ * idly until it is destroyed in the next user invoked action, like
  * poThreadPool_checkIdleThreadTimeout().  The idle worker threads are
  * only destroyed when poThreadPool_runTask() or
  * poThreadPool_checkIdleThreadTimeout() are called.  if \p maxIdleTime is

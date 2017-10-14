@@ -74,7 +74,7 @@ extern void poDebugInit(void);
      _SPEW("SPEW: ", PO_SPEW_ERROR, fmt, ##__VA_ARGS__)
 
 #define _VASSERT(val, fmt, ...) \
-    _assert((val), "ASSERT: ", __BASE_FILE__,\
+    _assert((val), "ASSERT("#val") ", __BASE_FILE__,\
         __func__, __LINE__, "failed: " fmt, ##__VA_ARGS__)
 
 #define ASSERT(val)                _VASSERT(val, "")

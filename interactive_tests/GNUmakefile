@@ -4,9 +4,7 @@ CFLAGS := -Wall -Werror
 ADDLIBS := ../lib/libpotato.so
 
 
-
 murmur_test_SOURCES := murmur_test.c
-
 
 threadPool_sleep_SOURCES := threadPool_sleep.c
 
