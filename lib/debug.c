@@ -40,7 +40,7 @@ void _vspew(const char *pre, const char *file,
 }
 
 
-#ifdef PO_DEBUG
+#ifdef DEBUG
 
 #define UNSET_LEVEL   10200
 
@@ -98,7 +98,7 @@ void _spew(const char *pre, enum PO_SPEW_LEVEL level,
         const char *file, const char *func,
         int line, const char *fmt, ...)
 {
-#ifdef PO_DEBUG
+#ifdef DEBUG
     if(setLevel == UNSET_LEVEL) _spewLevel(SPEW_LEVEL_DFT);
     if(setLevel < level) return;
 #endif

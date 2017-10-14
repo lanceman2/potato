@@ -88,7 +88,7 @@ extern void poDebugInit(void);
 ///////////////////////////////////////////////////////////////////////////
 
 
-#ifdef PO_DEBUG
+#ifdef DEBUG
 
 #  if defined(SPEW_LEVEL_ERROR)\
     || defined(SPEW_LEVEL_WARN)\

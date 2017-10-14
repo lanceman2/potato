@@ -5,16 +5,30 @@ INSTALLED := html
 
 IN_VARS := VERSION
 
+# We pick one of the generated files as the target
 BUILD_NO_INSTALL := html/index.html
 
-# TODO: check to build error
-html/index.html:
-	doxygen
+threadPool_drawing_sm.png: threadPool_drawing.png
+	convert $< -transparent white -resize "50%" $@
 
-CLEANFILES := doxygen_sqlite3.db
+#
+threadPool_drawing.png: threadPool_drawing.odg
+	libreoffice --invisible --convert-to png $<
+	[ -f $@ ] || exit 1
+
+# TODO: check build error
+html/index.html: threadPool_drawing_sm.png Doxyfile
+	rm -rf html latex
+	rm -f doxygen_sqlite3.db
+	doxygen
+	cp threadPool_drawing.png html/
+
+CLEANFILES := doxygen_sqlite3.db threadPool_drawing.png threadPool_drawing_sm.png
 CLEANDIRS := html latex
 
 include ../quickbuild.make
+
+html/index.html: $(wildcard $(top_srcdir)/lib/*.h)
 
 # We must add REPO_VERSION after including quickbuild.make so that
 # top_srcdir is defined.  This is a little ugly, but oh well.

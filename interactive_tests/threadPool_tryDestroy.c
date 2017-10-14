@@ -68,8 +68,8 @@ int runScenario(uint32_t totalTasks, uint32_t maxNumThreads,
         timeEstmate);
 
     struct POThreadPool *p;
-    p = poThreadPool_create(
-        10 /*maxQueueLength*/, maxNumThreads /*maxNumThreads*/,
+    p = poThreadPool_create( maxNumThreads /*maxNumThreads*/,
+        10 /*maxQueueLength*/,
         100 /*maxIdleTime milli-seconds 1s/1000*/);
 
     uint32_t i;
@@ -102,8 +102,6 @@ int main(int argc, char **argv)
     runScenario(200, 200, 10);
     runScenario(200, 100, 10);
     runScenario(500, 500, 10);
-    runScenario(1000, 1000, 10);
-
 
     WARN("%s Successfully Exiting", argv[0]);
     return 0;

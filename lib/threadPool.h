@@ -2,12 +2,36 @@
  *
  * The potato thread pool.
  *
- * The potato thread pool has a few features.
+ * The potato thread pool has a few more features than some thread pools.
+ * 
+ * \section thread_pool_data_structure thread pool memory
+ * 
+ * This figure just shows the different possible lists in the \p
+ * POThreadPool data structure.  This figure is not a valid state of the
+ * data structure; there should not be queued tasks in the General queue
+ * if there are idle or unused workers.  This figure is just to illustrate
+ * all possible list and how the memory is managed.  The memory for these
+ * lists is fixed, as is the number of CPU cores on your computer.  We see
+ * on point in using unlimited threads on computers with limited cores.
+ * Some of the lists are doubly linked and some are not.  Clearly the \e
+ * used lists are not required to be doubly linked.  Writing this code is
+ * not easy without this figure.
+ *
+ * \htmlonly
+ *   <a href="threadPool_drawing.png" title="larger image">
+ * \endhtmlonly
+
+ *
+ * \image html threadPool_drawing_sm.png
+ *
+ * \htmlonly
+ *    </a>
+ * \endhtmlonly
  *
  * \section thread_pool_size thread pool size
  *
- * The potato thread pool has a maximum number of threads that is set by
- * the user.  The number of running threads is increases up to this
+ * The potato thread pool has a maximum number of running threads that is
+ * set by the user.  The number of running threads is increases up to this
  * maximum size by successive calls to poThreadPool_runTask() and when the
  * maximum number of working threads is reached poThreadPool_runTask()
  * will either block until a thread finishes a task or return an error,
@@ -83,29 +107,26 @@ struct POThreadPool_tract
  * and the size depends on the parameters \p maxQueueLength and \p
  * maxNumThreads.
  *
- *  \param maxQueueLength  the maximum number of tasks that can
- *  be queued, waiting to be run via a worker thread.  If \p
- *  maxQueueLength is 0 the created thread pool will not queue
- *  any tasks in a wait queue.  If you use tracts of tasks, it's
- *  a good idea to have \p maxQueueLength large enough to hold
- *  all the tasks that will be blocked by running tasks that are
- *  in the same tract.
- *  \param maxNumThreads  the maximum number of worker threads
- *  that can exist.  This does not include the master thread that
- *  calls poThreadPool_runTask().
- *  \param maxIdleTime  is the time that an idle worker thread will wait
- *  idly until it is destroyed in the next user invoked action, like
- *  poThreadPool_checkIdleThreadTimeout().  The idle worker threads are
- *  only destroyed when poThreadPool_runTask() or
- *  poThreadPool_checkIdleThreadTimeout() are called.
- *  if \p maxIdleTime is zero than there will be no idle threads waiting
- *  for tasks.
+ * \param maxNumThreads  the maximum number of worker threads that can
+ * exist.  This does not include the master thread that calls
+ * poThreadPool_runTask().\ \param maxQueueLength  the maximum number of
+ * tasks that can be queued, waiting to be run via a worker thread.  If \p
+ * maxQueueLength is 0 the created thread pool will not queue any tasks in
+ * a wait queue.  If you use tracts of tasks, it's a good idea to have \p
+ * maxQueueLength large enough to hold all the tasks that will be blocked
+ * by running tasks that are in the same tract.  \param maxIdleTime  is
+ * the time that an idle worker thread will wait idly until it is
+ * destroyed in the next user invoked action, like
+ * poThreadPool_checkIdleThreadTimeout().  The idle worker threads are
+ * only destroyed when poThreadPool_runTask() or
+ * poThreadPool_checkIdleThreadTimeout() are called.  if \p maxIdleTime is
+ * zero than there will be no idle threads waiting for tasks.
  *
  *  \return a pointer to an opaque struct POThreadPool
  */
 extern
 struct POThreadPool *poThreadPool_create(
-        uint32_t maxQueueLength, uint32_t maxNumThreads,
+        uint32_t maxNumThreads, uint32_t maxQueueLength,
         uint32_t maxIdleTime /*micro-seconds*/);
 
 

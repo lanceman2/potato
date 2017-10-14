@@ -3,18 +3,18 @@ libpotato.so_SOURCES := debug.c murmurHash.c threadPool.c
 
 INSTALL_DIR = $(PREFIX)/lib 
 
-# uncomment TESTS to build tests
-# or
-# comment out TESTS to not build tests
-TESTS :=\
+
+
+TESTS := yes
+
+ifdef TESTS
+
+BUILD_NO_INSTALL :=\
  test_debug\
  test_debug_DEBUG\
  test_debug_DEBUG_D\
  test_poMurmurHash
 
-ifdef TESTS
-
-BUILD_NO_INSTALL := $(TESTS)
 test_debug_SOURCES := debug.c test_debug.c
 
 test_debug_LEVEL_DEBUG_SOURCES := debug.c test_debug.c
