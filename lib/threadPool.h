@@ -244,12 +244,11 @@ uint32_t poThreadPool_tryDestroy(struct POThreadPool *p,
  * \param callback a function to call in the task thread.
  * \param callbackData a pointer to pass to the \p callback function.
  *
- * \return false on success and the task will be running or queued to
- * run, or true in the case there the time out has expired or other
- * error case.
+ * \return 0 on success and the task will be running or queued to
+ * run, or \p PO_ERROR_TIMEOUT in the case there the time out has expired.
  */
 extern
-bool poThreadPool_runTask(struct POThreadPool *p,
+int poThreadPool_runTask(struct POThreadPool *p,
         bool waitIfFull,
         //uint32_t timeOut, /*in milliseconds = 10^(-3) seconds*/
         struct POThreadPool_tract *tract,
@@ -258,11 +257,19 @@ bool poThreadPool_runTask(struct POThreadPool *p,
 
 /** Check for and remove a timed out idle thread from the pool.
  *
+ * Idle threads may be removed in a call to poThreadPool_runTask(),
+ * but if you just need to wind down your worker threads and not
+ * add tasks you call call this.
+ *
+ * Note the potato thread pool does not bother to count the number
+ * of running threads, that would require more memory and computer
+ * resources, except in a DEBUG build.
+ *
  * \param p a struct POThreadPool pointer returned from
  * poThreadPool_create().
  *
- * \return true if there are more idle threads to remove after this
- * call, else return false.
+ * \return true if there are one or more idle threads to remove after this
+ * call, else returns false.
  */
 extern
 bool poThreadPool_checkIdleThreadTimeout(struct POThreadPool *p);

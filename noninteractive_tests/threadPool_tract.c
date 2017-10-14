@@ -18,12 +18,12 @@
 /* This simple test code shows how tracts can be used to keep threads in a
  * tract from accessing counter at the same time.  Not only doe the tract
  * keep the counter from getting corrupted it also makes the calculation
- * run faster when LOOPS is small, because there is contention between
+ * run faster when TASKLOOPS is small, because there is contention between
  * threads. */
 
 
 #define NTRACT  4
-#define LOOPS   300
+#define TASKLOOPS   300
 const uint32_t N = 1000;
 
 
@@ -35,14 +35,14 @@ static void* task(uintptr_t index)
     //fflush(stdout);
     ASSERT(index < NTRACT);
     int i;
-    for(i=0;i<LOOPS;++i) {
+    for(i=0;i<TASKLOOPS;++i) {
         // Here we are accessing the same static variable in
         // many threads, unless we have tracts for a given
         // index.
         //++counter[index];
         --counter[index];
     }
-    for(i=0;i<LOOPS;++i) {
+    for(i=0;i<TASKLOOPS;++i) {
         // Here we are accessing the same static variable in
         // many threads, unless we have tracts for a given
         // index.
@@ -63,7 +63,7 @@ void run(struct POThreadPool_tract *tracts)
 
     struct POThreadPool *p;
     p = poThreadPool_create(10*NTRACT /*maxNumThreads*/,
-            400 /*maxQueueLength*/,
+            NTRACT*N/*maxQueueLength*/,
             100 /*maxIdleTime milli-seconds 1s/1000*/);
 
     uint32_t i,j;
@@ -127,6 +127,8 @@ int main(int argc, char **argv)
 
     memset(tract, 0, sizeof(tract));
     run(tract);  // run with tracts
+
+    printf("%s SUCCESS\n", argv[0]);
 
     return 0;
 }

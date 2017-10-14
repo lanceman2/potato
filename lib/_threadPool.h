@@ -17,6 +17,7 @@
 #include "tIme.h"
 #include "_pthreadWrap.h" // mutexInit() mutexLock() etc...
 #include "threadPool.h"
+#include "error.h"
 
 /* This is a bunch of linked lists, queues and stacks, that may be singly
  * linked (simple stack) or doubly linked (because we need to pull from

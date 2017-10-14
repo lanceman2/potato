@@ -10,6 +10,8 @@ threadPool_sleep_SOURCES := threadPool_sleep.c
 
 threadPool_tryDestroy_SOURCES := threadPool_tryDestroy.c
 
+threadPool_checkIdle_SOURCES := threadPool_checkIdle.c
+
 
 
 

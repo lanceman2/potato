@@ -282,11 +282,12 @@ bool _poThreadPool_checkIdleThreadTimeout(struct POThreadPool *p)
             (p->maxIdleTime/1000.0))
         workerOldIdlePopSignal(p, t);
 
-    // Returns true if there is more than one idle thread and
+    // Returns true if there is one or more idle thread and
     // the oldest idle thread is old enough to retire.  
     return (p->workers.idleFront &&
-            // if front == back then there is just on in the idle list.
-            (p->workers.idleFront != p->workers.idleBack) &&
+            // if front == back then there is just one in the idle list.
+            //(p->workers.idleFront != p->workers.idleBack) &&
+            p->workers.idleFront &&
         (t - p->workers.idleFront->lastWorkTime) >
         (p->maxIdleTime/1000.0));
 }
@@ -322,7 +323,7 @@ bool tractHasRunningWorker(struct POThreadPool *p,
 // call to pthread_cond_wait(), condWait() being a wrapper of
 // pthread_cond_wait().
 static inline
-bool workerIdleYoungPop(struct POThreadPool *p,
+int workerIdleYoungPop(struct POThreadPool *p,
         struct POThreadPool_tract *tract,
         void *(*callback)(void *), void *callbackData)
 {
@@ -387,7 +388,7 @@ bool workerIdleYoungPop(struct POThreadPool *p,
     // Check and remove extra old unemployed threads.
     _poThreadPool_checkIdleThreadTimeout(p);
 
-    return false; // Success.
+    return 0; // Success.
 }
 
 
@@ -837,7 +838,7 @@ void launchWorkerThread(struct POThreadPool *p,
 // Launch a thread with an unused worker
 // We must have the threadPool mutex lock to call this.
 static inline
-bool workerUnusedPop(struct POThreadPool *p,
+int workerUnusedPop(struct POThreadPool *p,
         struct POThreadPool_tract *tract,
         void *(*callback)(void *), void *callbackData)
 {
@@ -874,13 +875,13 @@ bool workerUnusedPop(struct POThreadPool *p,
         worker->tract = tract;
     }
     launchWorkerThread(p, worker);
-    return false; // success
+    return 0; // success
 }
 
 
 // We must have the threadPool mutex lock to call this.
 static
-bool _poThreadPool_runTask(struct POThreadPool *p,
+int _poThreadPool_runTask(struct POThreadPool *p,
         bool waitIfFull, struct POThreadPool_tract *tract,
         void *(*callback)(void *), void *callbackData)
 {
@@ -910,7 +911,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
 
         // We use an idle worker thread in this case.
         return workerIdleYoungPop(p, tract, callback, callbackData);
-        // returns false == success
+        // returns 0 == success
     }
 
     if(p->workers.unused && !hasTractWorker)
@@ -920,7 +921,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
         //
         // Launch a new thread with an unused worker
         return workerUnusedPop(p, tract, callback, callbackData);
-        // returns false == success
+        // returns 0 == success
     }
 
 
@@ -935,7 +936,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
         //
         // We have no tasks to queue with, i.e. the queues are full.
 
-        if(!waitIfFull) return true; // fail
+        if(!waitIfFull) return PO_ERROR_TIMEOUT; // fail
 
         DASSERT(!p->taskWaitingToBeRun);
         p->taskWaitingToBeRun = true;
@@ -956,7 +957,8 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
         condWait(&p->cond, &p->mutex);
         DASSERT(!p->taskWaitingToBeRun);
         // Try again.  There should be no state change up to now!
-        return _poThreadPool_runTask(p, waitIfFull, tract, callback, callbackData);
+        return _poThreadPool_runTask(p, waitIfFull, tract, callback,
+                callbackData);
     }
 
     if(tract)
@@ -1001,7 +1003,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
         task->userData = callbackData;
         task->tract = tract;
 
-        return false; // success, it's queued in the General queue.
+        return 0; // success, it's queued in the General queue.
     }
 
 
@@ -1034,7 +1036,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
     // the other tasks in the worker tract task list.  It's
     // in a "Blocked" tract task queue which is kept in the
     // particular worker/tract tract data structure.
-    return false;
+    return 0;
 }
 
 
@@ -1043,7 +1045,7 @@ bool _poThreadPool_runTask(struct POThreadPool *p,
  * If tract is NULL no tract is used.
  *
  */
-bool poThreadPool_runTask(struct POThreadPool *p,
+int poThreadPool_runTask(struct POThreadPool *p,
         bool waitIfFull,
         struct POThreadPool_tract *tract,
         void *(*callback)(void *), void *callbackData)
@@ -1056,7 +1058,7 @@ bool poThreadPool_runTask(struct POThreadPool *p,
 
     DSPEW();
 
-    bool ret;
+    int ret;
     ret = _poThreadPool_runTask(p, waitIfFull, tract,
             callback, callbackData);
 
