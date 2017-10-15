@@ -80,10 +80,13 @@ struct POThreadPool;
 struct POThreadPool_tract
 {
     struct POThreadPool_worker *worker; // if there is one working now
-    // nextTask and lastTask are the tract task queue that is added to
+    // firstTask and lastTask are the tract task queue that is added to
     // when the General task queue is empty.
+    // This is a singly linked list a pointer to both ends.
     struct POThreadPool_task *firstTask, // front of queued task
                             *lastTask; // the back of the queued task list
+
+    // lastTask->next == NULL is the end of the list
 
     // When taskCount goes to zero we can recycle this tract.
     uint32_t taskCount; // number of queued tasks that are associated.

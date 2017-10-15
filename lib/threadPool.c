@@ -131,19 +131,20 @@ void workerOldIdlePopSignal(struct POThreadPool *p, double t)
     ASSERT((errno = pthread_cond_signal(&worker->cond)) == 0);
 
     INFO("signaled thread %ld idle %.2lf seconds",
-        (unsigned long) worker->thread, t - worker->lastWorkTime);
+        (unsigned long) worker->pthread, t - worker->lastWorkTime);
 }
 
 
 // We need a threadPool mutex lock to call this.
+//
+// Return the number of tasks that need to finish running,
+// including the tasks that are being worked on currently.
 uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
         uint32_t timeOut /*milli-seconds = 1/1000 sec*/)
 {
     DASSERT(p);
     DASSERT(p->numThreads <= p->maxNumThreads);
     DASSERT(!p->cleanup);
-
-    // TODO: apply timeOut
 
     double t;
     t = poTime_getDouble();
@@ -192,11 +193,73 @@ uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
 
     if(p->numThreads)
     {
-        // TODO: add all the queued tasks to this return value.
-        NOTICE("There are %"PRIu32
-            " working task threads\n",
-            p->numThreads);
-        return p->numThreads;
+        // All we need now is a return value.  This block of code
+        // just counts tasks.
+
+        /****************************************************************
+         * This is the case where we add up all the lists of tasks that
+         * are queued.  This code does O(N) list counting, but that's
+         * okay given this is a destructor, transient call.  We prefer
+         * this to using more memory in the threadPool data structures.
+         */
+        uint32_t remainingTasks;
+        struct POThreadPool_worker *w;
+        remainingTasks = p->numThreads; // minus the idle threads.
+
+        DASSERT(remainingTasks < p->maxNumThreads);
+        
+        if(p->workers.idleFront)
+        {
+            // We should have nothing in the General Task Queue
+            DASSERT(!p->tasks.back);
+            DASSERT(!p->tasks.front);
+
+            // We have idle worker threads.
+            DASSERT(p->workers.idleBack);
+            DASSERT(!p->workers.idleBack->prev);
+            DASSERT(!p->workers.idleFront->next);
+            // Discount the idle worker threads from remainingTasks
+            for(w = p->workers.idleFront; w; w = w->prev)
+                // idle threads do not work on a task
+                --remainingTasks;
+
+            // Make sure the count did not wrap backwards.
+            // That whats cool about using unsigned ints,
+            // you don't have to check two limits, just one;
+            // a wrapped passed zero int is a Large int.
+            DASSERT(remainingTasks < p->maxNumThreads);
+        }
+        else if(p->tasks.front)
+        {
+            // Add the General Queue Tasks to remainingTasks count.
+            DASSERT(p->tasks.back);
+            DASSERT(!p->tasks.back->next);
+            struct POThreadPool_task *t;
+            for(t = p->tasks.front; t; t = t->next)
+                ++remainingTasks;
+        }
+
+        DASSERT(remainingTasks <= p->maxNumThreads + p->maxQueueLength);
+
+        // There may be tasks in a tract queues which MUST be blocked by
+        // working threads in the same tract. These tract queues start in
+        // thread workers which are currently not in a list so we must
+        // look at all the worker array.
+        uint32_t i = 0;
+        for(w = p->worker; i < p->maxNumThreads; ++i)
+            if(w->isWorking && w->tract)
+            {
+                // This tract better have some tasks listed
+                DASSERT(w->tract->firstTask);
+                DASSERT(w->tract->lastTask);
+                struct POThreadPool_task *t;
+                for(t = w->tract->firstTask; t; t = t->next)
+                    ++remainingTasks;
+            }
+ 
+        NOTICE("There are %"PRIu32" uncompleted tasks remaining\n", remainingTasks);
+
+        return remainingTasks;
     }
 
     DASSERT(!p->cleanup); // debug sanity check 
@@ -293,7 +356,6 @@ bool tractHasRunningWorker(struct POThreadPool *p,
     }
     return false; // No running worker.
 }
-
 
 
 
@@ -417,6 +479,7 @@ typedef void *(*_poThreadPool_callback_t)(void *);
 
 // Find a task for a running thread
 // We much have the threadPool mutex lock to call this.
+// This is called by a worker in the pool, a working worker thread.
 static inline
 _poThreadPool_callback_t lookForWork(struct POThreadPool *p,
         struct POThreadPool_worker *worker,
@@ -473,6 +536,7 @@ _poThreadPool_callback_t lookForWork(struct POThreadPool *p,
         DASSERT(task->userCallback);
 
         DASSERT(tract->taskCount > 0);
+        DASSERT(tract->taskCount <= p->maxQueueLength);
         --tract->taskCount;
         
         *userData = task->userData;
@@ -539,6 +603,7 @@ _poThreadPool_callback_t lookForWork(struct POThreadPool *p,
                 worker->tract->worker = worker;
 
                 DASSERT(worker->tract->taskCount > 0);
+                DASSERT(worker->tract->taskCount <= p->maxQueueLength);
                 --worker->tract->taskCount;
             }
         }
@@ -623,7 +688,7 @@ static void
       /////                                              \///|
      /*-*/              mutexLock(pmutex);                ////|
     /////                                                  \///|
-    
+
 
     void *(*userCallback)(void *);
     void *userData;
@@ -638,7 +703,7 @@ static void
     DASSERT(p->numThreads <= p->maxNumThreads);
 
     // extra spaces to line up with other print below
-    INFO("adding thread, there are now %"PRIu32" threads",
+    INFO("adding thread, there are now %"PRIu32" idle or working threads",
             p->numThreads);
 
     // Now tell the manager thread to proceed:
@@ -647,15 +712,18 @@ static void
     // from a user call to poThreadPool_runTask().
     ASSERT((errno = pthread_cond_signal(&p->cond)) == 0);
 
+
     while(true)
     {
+        // This should not be in the idle or unused worker list; it's a
+        // working worker, which by definition has next == NULL.
+        DASSERT(!worker->next);
 
         worker->userCallback = NULL;
 
-        DASSERT(!worker->tract ||
-            (worker->tract->worker == worker));
+        DASSERT(!worker->tract || (worker->tract->worker == worker));
         DSPEW("tract(%p)", worker->tract);
-
+        worker->isWorking = true;
 
         ////|                                                  /////
          /*-*/             mutexUnlock(pmutex);               /////
@@ -680,6 +748,7 @@ static void
          /*-*/              mutexLock(pmutex);                ////|
         /////                                                  \///|
 
+        worker->userCallback = false;
         DASSERT(!worker->tract ||
             (worker->tract->worker == worker));
 
@@ -734,10 +803,10 @@ static void
         // We wait until the manager pops this worker off for new task.
         //
         // pthread_cond_wait() does unlock pmutex, wait for signal,
-        // and then lock pmutex
+        // and then lock pmutex when signaled:
         condWait(&worker->cond, pmutex);
         // Note: a thread can sit here an arbitrary amount of time,
-        // even if it is signaled.hr
+        // even if it is signaled.
         ///////////////////////////////////////////////////////////////
 
         if((userCallback = lookForWork(p, worker, &userData)))
@@ -752,7 +821,7 @@ static void
 
     --p->numThreads;
 
-    INFO("removing thread, there are now %"PRIu32" threads",
+    INFO("removing thread, there are now %"PRIu32" idle or working threads",
                 p->numThreads);
 
     // put this worker in the unused worker stack
@@ -803,7 +872,7 @@ void launchWorkerThread(struct POThreadPool *p,
     // We will add one more thread now
     DASSERT(p->numThreads < p->maxNumThreads);
 
-    ASSERT((errno = pthread_create(&worker->thread, &attr,
+    ASSERT((errno = pthread_create(&worker->pthread, &attr,
             (void *(*)(void *)) workerPthreadCallback, worker)) == 0);
 
     // Wait for the thread to get going so that the POThreadPool structure

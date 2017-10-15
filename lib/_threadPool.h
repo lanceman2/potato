@@ -101,6 +101,8 @@ struct POThreadPool_tasks
     // the next task to act on.  The nag at the counter says: "Start at
     // the back of the line PLEASE!"
     struct POThreadPool_task *back, *front, // General queue
+        // back->next == NULL
+
         // The unused task structs for this queue.  Keeps tabs on the
         // memory that is not counted in the list in "front" and "back" or
         // are in the tract structs.  Singly linked stack list.
@@ -119,7 +121,7 @@ struct POThreadPool_worker
     void *(*userCallback)(void *);
     void *userData;
 
-    pthread_t thread;
+    pthread_t pthread;
 
     // If there is no queue and there is a worker working on a task with
     // the same ID than poThreadPool_runTask() will block until this
@@ -131,8 +133,8 @@ struct POThreadPool_worker
     struct POThreadPool *pool;
 
     // next and prev is for idle list (thread that exists but is not
-    // running a task) or unused (does not have a thread in existence)
-    // list.
+    // working on a task) or unused (does not have a thread in existence)
+    // list. 
     struct POThreadPool_worker *next, *prev;
 
     // Used to measure timeouts like: idle thread time out.
@@ -143,6 +145,12 @@ struct POThreadPool_worker
 
     // associated tract (if present)
     struct POThreadPool_tract *tract;
+
+    // isWorking is set when this worker struct has a running thread that
+    // is working on a user task and not in the idle thread list or the
+    // unused worker list.  There is no list of working threads. The
+    // working threads manage themselves.
+    bool isWorking;
 };
 
 
@@ -151,7 +159,10 @@ struct POThreadPool_workers
     // There are three kinds of workers in worker[] array:
     //    - idle (has a pthread that is blocked),
     //    - unused (have no thread or task), and
-    //    - working (has a thread and is working on a task).
+    //    - working (has a thread and is working on a task)
+    //          and is not in a POThreadPool_workers list,
+    //          but is part of the POThreadPool_worker array
+    //          in struct POThreadPool
 
     struct POThreadPool_worker
         // A doubly listed list of workers with threads that are not
@@ -162,6 +173,7 @@ struct POThreadPool_workers
         // We get fresher workers from the back of the line, and old
         // workers in the front get retired first.
         *unused;
+
         // The working workers are not keep in a list ... yet.  We may
         // need them listed so we can detect hung threads without doing a
         // O(N) search.  We'd order the working threads from shortest time
