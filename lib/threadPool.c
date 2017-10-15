@@ -158,7 +158,7 @@ uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
         workerOldIdlePopSignal(p, t);
     }
 
-    if(p->numThreads > 0 && timeOut == PO_THREADPOOL_LONGTIME)
+    if(p->numThreads > 0 && timeOut == PO_LONGTIME)
     {
         p->cleanup = true;
         // Wait for the last thread to finish.  The last thread to finish
@@ -167,28 +167,11 @@ uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
     }
     else if(p->numThreads > 0 && timeOut)
     {
-        struct timeval now;
-        struct timespec timeout;
-        ASSERT(gettimeofday(&now, 0) == 0);
-        timeout.tv_sec = now.tv_sec + timeOut/1000;
-        // tv_nsec is in nano seconds = 10^(-9) seconds
-        // tv_usec is in microseconds = 10^(-6) seconds
-        // timeOut in in milliseconds = 10^(-3) seconds
-        timeout.tv_nsec = now.tv_usec*1000 + (timeOut%1000)*1000000;
-    
-        if(timeout.tv_nsec > 1000000000)
-        {
-            uint64_t extraSecs;
-            extraSecs = timeout.tv_nsec/1000000000;
-            timeout.tv_sec += extraSecs;
-            timeout.tv_nsec -= extraSecs * 1000000000;
-        }
-
         p->cleanup = true;
         // Wait for the last thread to finish.  The last thread to finish
         // will signal us on the way out.
         int ret;
-        ret = condTimedWait(&p->cond, &p->mutex, &timeout);
+        ret = condTimedWait(&p->cond, &p->mutex, timeOut);
 
 #ifdef DEBUG
         if(ret == ETIMEDOUT && p->numThreads)
@@ -882,7 +865,8 @@ int workerUnusedPop(struct POThreadPool *p,
 // We must have the threadPool mutex lock to call this.
 static
 int _poThreadPool_runTask(struct POThreadPool *p,
-        bool waitIfFull, struct POThreadPool_tract *tract,
+        uint32_t timeOut/*milliseconds = (1/1000) sec*/,
+        struct POThreadPool_tract *tract,
         void *(*callback)(void *), void *callbackData)
 {
     DASSERT(p);
@@ -936,9 +920,12 @@ int _poThreadPool_runTask(struct POThreadPool *p,
         //
         // We have no tasks to queue with, i.e. the queues are full.
 
-        if(!waitIfFull) return PO_ERROR_TIMEOUT; // fail
-
+        if(timeOut == 0)
+            // We are out of time.
+            return PO_ERROR_TIMEOUT; // fail
+    
         DASSERT(!p->taskWaitingToBeRun);
+
         p->taskWaitingToBeRun = true;
         // Next try we should have a free task struct to queue with
         // or a free worker thread to run with.
@@ -954,11 +941,22 @@ int _poThreadPool_runTask(struct POThreadPool *p,
                 p->maxQueueLength
 #endif
                 );
-        condWait(&p->cond, &p->mutex);
-        DASSERT(!p->taskWaitingToBeRun);
-        // Try again.  There should be no state change up to now!
-        return _poThreadPool_runTask(p, waitIfFull, tract, callback,
+
+
+        if(timeOut == PO_LONGTIME)
+        {
+            condWait(&p->cond, &p->mutex);
+            DASSERT(!p->taskWaitingToBeRun);
+            // Try again.  There should be no state change up to now!
+            return _poThreadPool_runTask(p, timeOut, tract, callback,
                 callbackData);
+        }
+        // else timeOut != PO_LONGTIME
+        condTimedWait(&p->cond, &p->mutex, timeOut);
+        if(p->taskWaitingToBeRun) p->taskWaitingToBeRun = false;
+        // Try again, with no timeOut.  It does not matter if
+        // we timed out or not, either way we just do this:
+        return _poThreadPool_runTask(p, 0, tract, callback, callbackData);
     }
 
     if(tract)
@@ -1046,7 +1044,7 @@ int _poThreadPool_runTask(struct POThreadPool *p,
  *
  */
 int poThreadPool_runTask(struct POThreadPool *p,
-        bool waitIfFull,
+        uint32_t timeOut /*milliseconds is units of seconds/1000*/,
         struct POThreadPool_tract *tract,
         void *(*callback)(void *), void *callbackData)
 {
@@ -1059,7 +1057,7 @@ int poThreadPool_runTask(struct POThreadPool *p,
     DSPEW();
 
     int ret;
-    ret = _poThreadPool_runTask(p, waitIfFull, tract,
+    ret = _poThreadPool_runTask(p, timeOut, tract,
             callback, callbackData);
 
     mutexUnlock(&p->mutex);

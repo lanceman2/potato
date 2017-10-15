@@ -7,7 +7,7 @@ L := ../lib/
 
 LIB_INC_FILES :=\
  _potato.h\
- $(L)error.h\
+ $(L)define.h\
  $(L)murmurHash.h\
  $(L)threadPool.h
 

@@ -133,22 +133,17 @@ struct POThreadPool *poThreadPool_create(
         uint32_t maxIdleTime /*micro-seconds*/);
 
 
-/** Macro for infinite timeout used in poThreadPool_tryDestroy() */
-#define PO_THREADPOOL_LONGTIME 0xFFFFFFFF
-/** Macro for error return value from poThreadPool_tryDestroy() */
-#define PO_THREADPOOL_ERROR    0xFFFFFFFF
-
 /** Waits for all the current task requests to finish and then cleans up
  * all memory and thread resources, but only if all tasks are finished.
  *
  * This will not interrupt any threads that are working on tasks.
  *
  * \param timeOut the time to wait in milli-seconds for all tasks to
- * finish.  If \p timeOut is PO_THREADPOOL_LONGTIME this will wait
+ * finish.  If \p timeOut is PO_LONGTIME this will wait
  * indefinitely.
  *
  * \param timeOut in milli-seconds.  poThreadPool_tryDestroy() will return
- * in \p timeOut milli-seconds.  If \p timeOut is PO_THREADPOOL_LONGTIME
+ * in \p timeOut milli-seconds.  If \p timeOut is PO_LONGTIME
  * poThreadPool_tryDestroy() will not return until all tasks are finished.
  * With \p timeOut in milliseconds and being a \a uint32_t, the longest
  * timeout is a little longer than 49.7 days (= 2^32 /(3600 * 1000 * 24)).
@@ -232,10 +227,11 @@ uint32_t poThreadPool_tryDestroy(struct POThreadPool *p,
  * of the potato thread pool considerably.
  *
  * \param p returned from a call to poThreadPool_create()
- * \param waitIfFull if set to true this call will block and wait
+ * \param timeOut will wait of \p timeOut muilliseconds
  * for an available worker thread there are \p maxNumThreads
- * working already, or it \p waitIffull is false this call will return
- * true for the "would block" like error.
+ * working already, or \p timeOut is PO_LONGTIME
+ * wait forever.  Use \p timeOut equal to \p 0 if you wish to
+ * return immediately.
  * \param tract may be NULL (0) to have the task unrelated to any other
  * tasks, pointing to memory that has been zeroed to have this task
  * associated with a new task, or use a value of task set from a previous
@@ -249,8 +245,7 @@ uint32_t poThreadPool_tryDestroy(struct POThreadPool *p,
  */
 extern
 int poThreadPool_runTask(struct POThreadPool *p,
-        bool waitIfFull,
-        //uint32_t timeOut, /*in milliseconds = 10^(-3) seconds*/
+        uint32_t timeOut, /*in milliseconds = 10^(-3) seconds*/
         struct POThreadPool_tract *tract,
         void *(*callback)(void *), void *callbackData);
 

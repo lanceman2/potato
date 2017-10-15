@@ -13,6 +13,7 @@
 
 #include "debug.h"
 #include "tIme.h"
+#include "define.h"
 #include "threadPool.h"
 
 /*  Run:
@@ -75,14 +76,14 @@ int runScenario(uint32_t totalTasks, uint32_t maxNumThreads)
 
     for(i=0; i<totalTasks; ++i)
         // this will wait then the pool is full
-        poThreadPool_runTask(p, true/*waitIfFull*/, 0, task, 0);
+        poThreadPool_runTask(p, PO_LONGTIME, 0, task, 0);
 
     // We should not have any idle threads now unless the system
     // has a very heavy load or something.
     ASSERT(poThreadPool_checkIdleThreadTimeout(p) == false);
 
     // This will block until all requested tasks are finished.
-    poThreadPool_tryDestroy(p, PO_THREADPOOL_LONGTIME);
+    poThreadPool_tryDestroy(p, PO_LONGTIME);
 
     printf("\nfinished in %g seconds\n\n", poTime_getDouble() - tstart);
 

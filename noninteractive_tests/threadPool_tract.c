@@ -13,6 +13,7 @@
 
 #include "debug.h"
 #include "tIme.h"
+#include "define.h"
 #include "threadPool.h"
 
 /* This simple test code shows how tracts can be used to keep threads in a
@@ -75,12 +76,12 @@ void run(struct POThreadPool_tract *tracts)
             index = i;
             struct POThreadPool_tract *tract = 0;
             if(tracts) tract = &tracts[i];
-            poThreadPool_runTask(p, true/*waitIfFull*/, tract,
+            poThreadPool_runTask(p, PO_LONGTIME, tract,
                 (void *(*)(void *)) task, (void *) index);
         }
 
     // This will block until all threads finish.
-    poThreadPool_tryDestroy(p, PO_THREADPOOL_LONGTIME);
+    poThreadPool_tryDestroy(p, PO_LONGTIME);
 
     t = poTime_getDouble() - t;
 

@@ -18,6 +18,7 @@
 
 #include "debug.h"
 #include "tIme.h"
+#include "define.h"
 #include "threadPool.h"
 
 /*RUN:
@@ -43,7 +44,7 @@ int main(int argc, char **argv)
     uint32_t i;
 
     for(i=0; i<10; ++i)
-        poThreadPool_runTask(p, true/*waitIfFull*/, 0 /*tract*/, task, 0);
+        poThreadPool_runTask(p, PO_LONGTIME, 0 /*tract*/, task, 0);
 
 
     for(i=0; i<10; ++i)

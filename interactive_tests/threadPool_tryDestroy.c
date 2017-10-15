@@ -13,6 +13,7 @@
 
 #include "debug.h"
 #include "tIme.h"
+#include "define.h"
 #include "threadPool.h"
 
 /*  Run:
@@ -76,7 +77,7 @@ int runScenario(uint32_t totalTasks, uint32_t maxNumThreads,
 
     for(i=0; i<totalTasks; ++i)
         // this will wait then the pool is full
-        poThreadPool_runTask(p, true/*waitIfFull*/, 0, task, 0);
+        poThreadPool_runTask(p, PO_LONGTIME, 0, task, 0);
 
     uint32_t ret = 1;
 

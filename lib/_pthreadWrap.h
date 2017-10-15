@@ -114,10 +114,27 @@ bool condWait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 
 static inline
 int condTimedWait(pthread_cond_t *cond, pthread_mutex_t *mutex,
-        const struct timespec *abstime)
+        uint32_t timeOut /*milli-seconds = 1/1000 sec*/)
 {
+    struct timeval now;
+    struct timespec timeout;
+    ASSERT(gettimeofday(&now, 0) == 0);
+    timeout.tv_sec = now.tv_sec + timeOut/1000;
+    // tv_nsec is in nano seconds = 10^(-9) seconds
+    // tv_usec is in microseconds = 10^(-6) seconds
+    // timeOut in in milliseconds = 10^(-3) seconds
+    timeout.tv_nsec = now.tv_usec*1000 + (timeOut%1000)*1000000;
+    
+    if(timeout.tv_nsec > 1000000000)
+    {
+        uint64_t extraSecs;
+        extraSecs = timeout.tv_nsec/1000000000;
+        timeout.tv_sec += extraSecs;
+        timeout.tv_nsec -= extraSecs * 1000000000;
+    }
+
     errno = 0;
-    if((errno = pthread_cond_timedwait(cond, mutex, abstime)) != 0)
+    if((errno = pthread_cond_timedwait(cond, mutex, &timeout)) != 0)
     {
         if(errno != EINTR && errno != ETIMEDOUT)
         {
