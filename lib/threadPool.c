@@ -204,10 +204,11 @@ uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
          */
         uint32_t remainingTasks;
         struct POThreadPool_worker *w;
+
+        DASSERT(p->numThreads <= p->maxNumThreads);
+
         remainingTasks = p->numThreads; // minus the idle threads.
 
-        DASSERT(remainingTasks < p->maxNumThreads);
-        
         if(p->workers.idleFront)
         {
             // We should have nothing in the General Task Queue
@@ -227,7 +228,7 @@ uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
             // That whats cool about using unsigned ints,
             // you don't have to check two limits, just one;
             // a wrapped passed zero int is a Large int.
-            DASSERT(remainingTasks < p->maxNumThreads);
+            DASSERT(remainingTasks <= p->maxNumThreads);
         }
         else if(p->tasks.front)
         {
@@ -257,7 +258,7 @@ uint32_t _poThreadPool_tryDestroy(struct POThreadPool *p,
                     ++remainingTasks;
             }
  
-        NOTICE("There are %"PRIu32" uncompleted tasks remaining\n", remainingTasks);
+        NOTICE("There are %"PRIu32" uncompleted tasks remaining", remainingTasks);
 
         return remainingTasks;
     }
