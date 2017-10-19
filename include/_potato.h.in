@@ -1,11 +1,14 @@
 // This will be the start of the single installed potato header file
-// potato.h
-#include <inttypes.h> // uint32_t PRIu32
-#include <stdio.h>   // printf stdout
-#include <stdbool.h> // define bool true false
-
+// potato.h that declares functions and some global variables from
+// libpotato.so
+//
 // VERSION is set only in ../package.make
-#define PO_VERSION @VERSION@
+#define PO_VERSION "@VERSION@"
 
+#include <inttypes.h> // uint32_t PRIu32
+#include <stdio.h>    // printf stdout
+#include <stdbool.h>  // define bool true false
+#include <time.h>     // clock_gettime()
+#include <string.h>   // memset()
 
 // Edit GNUmakefile to add more public interfaces below here:

@@ -1,5 +1,5 @@
 
-libpotato.so_SOURCES := debug.c murmurHash.c threadPool.c
+libpotato.so_SOURCES := debug.c time.c murmurHash.c threadPool.c
 
 INSTALL_DIR = $(PREFIX)/lib 
 
@@ -22,14 +22,14 @@ test_debug_LEVEL_DEBUG_SOURCES := debug.c test_debug.c
 test_poMurmurHash_SOURCES := murmurHash.c
 test_poMurmurHash_CPPFLAGS := -DTEST
 
-test_time_SOURCES := test_time.c debug.c
+test_time_SOURCES := test_time.c time.c debug.c
 test_time_CPPFLAGS := -DSPEW_LEVEL_DEBUG
 
 test_random_SOURCES := test_random.c murmurHash.c
 
 test_randSequence_SOURCES :=\
- test_randSequence.c\
  randSequence.c\
+ test_randSequence.c\
  murmurHash.c\
  debug.c
 

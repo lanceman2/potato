@@ -1,3 +1,6 @@
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
@@ -10,17 +13,13 @@
 
 // Hex encode.
 static inline
-char int2char(int i)
+char _po_int2char(int i)
 {
     if(i < 10)
         return (char) (i + 48);
     return (char) (i + 55);
 }
 
-
-// These numbers, R1 and R2, are nothing special.
-#define R1 0x324A5231
-#define R2 0xF3245233
 
 // rlen = length of string returned without '/0' terminator.
 // TODO: This is inefficient.  There must be a way to do this with less
@@ -37,8 +36,9 @@ char *poRandSequence_string(const char *ibuf, char *buf,
     uint32_t seed[2];
     unsigned short int xsubi[3];
 
-    seed[0] = poMurmurHash(ibuf, 4, R1);
-    seed[1] = poMurmurHash(&ibuf[4], 4, R2);
+    // the numbers 0x324A5231 and 0xF3245233 are nothing special.
+    seed[0] = poMurmurHash(ibuf, 4, 0x324A5231);
+    seed[1] = poMurmurHash(&ibuf[4], 4, 0xF3245233);
     memcpy(xsubi, seed, sizeof(xsubi));
 
     int len;
@@ -57,7 +57,7 @@ char *poRandSequence_string(const char *ibuf, char *buf,
         ptr = (unsigned char *) &val;
         while(len && j < 6)
         {
-            *buf = int2char((ptr[j/2] >> (4 * (j%2))) & 0x0F);
+            *buf = _po_int2char((ptr[j/2] >> (4 * (j%2))) & 0x0F);
             ++buf;
             --len;
             ++j;

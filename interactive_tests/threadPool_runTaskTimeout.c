@@ -66,7 +66,8 @@ int main(int argc, char **argv)
 
         ASSERT(!poThreadPool_runTask(p, 0, 0 /*tract*/, fasttask, 0));
         ASSERT(!poThreadPool_runTask(p, 10, 0 /*tract*/, fasttask, 0));
-
+        ASSERT(!poThreadPool_runTask(p, 0, 0 /*tract*/, fasttask, 0));
+        ASSERT(!poThreadPool_runTask(p, 10, 0 /*tract*/, fasttask, 0));
 
         for(i=0; i<TOTAL_TASKS-2; ++i)
             ASSERT(!poThreadPool_runTask(p, PO_LONGTIME, 0 /*tract*/, task, 0));
@@ -77,8 +78,6 @@ int main(int argc, char **argv)
             ASSERT(PO_ERROR_TIMEOUT ==
                 poThreadPool_runTask(p, 10/*timeOut milliseconds*/,
                     0 /*tract*/, task, 0));
-
-
     }
 
 
