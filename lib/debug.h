@@ -30,17 +30,17 @@ enum PO_SPEW_LEVEL {
 };
 
 
-extern void _spew(const char *pre, enum PO_SPEW_LEVEL level,
+extern void _po_spew(const char *pre, enum PO_SPEW_LEVEL level,
         const char *file, const char *func,
         int line, const char *fmt, ...)
          // check printf format errors at compile time:
         __attribute__ ((format (printf, 6, 7)));
 
-extern void _vspew(const char *pre, const char *file,
+extern void _po_vspew(const char *pre, const char *file,
         const char *func, int line,
         const char *fmt, va_list ap);
 
-extern void _assertAction(void);
+extern void _po_assertAction(void);
 
 static inline bool _assert(bool val, const char *pre,
         const char *file, const char *func,
@@ -49,9 +49,9 @@ static inline bool _assert(bool val, const char *pre,
     if((bool) (val)) return false; // success
     va_list ap;
     va_start(ap, fmt);
-    _vspew(pre, file, func, line, fmt, ap);
+    _po_vspew(pre, file, func, line, fmt, ap);
     va_end(ap);
-    _assertAction();
+    _po_assertAction();
     return true; // fail
 }
 
@@ -62,7 +62,7 @@ extern void poDebugInit(void);
 
 
 #define _SPEW(pre, level, fmt, ... )\
-     _spew(pre, level,  __BASE_FILE__,\
+     _po_spew(pre, level,  __BASE_FILE__,\
         __func__, __LINE__, fmt "\n", ##__VA_ARGS__)
 
 

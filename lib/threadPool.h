@@ -141,6 +141,8 @@ struct POThreadPool *poThreadPool_create(
  *
  * This will not interrupt any threads that are working on tasks.
  *
+ * \param p returned from a call to poThreadPool_create()
+ *
  * \param timeOut the time to wait in milli-seconds for all tasks to
  * finish.  If \p timeOut is PO_LONGTIME this will wait
  * indefinitely.

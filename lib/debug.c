@@ -31,7 +31,7 @@
 #endif
 
 
-void _vspew(const char *pre, const char *file,
+void _po_vspew(const char *pre, const char *file,
         const char *func, int line,
         const char *fmt, va_list ap)
 {
@@ -94,7 +94,7 @@ void _spewLevel(enum PO_SPEW_LEVEL level)
 // INFO                  3
 // DSPEW                 4
 
-void _spew(const char *pre, enum PO_SPEW_LEVEL level,
+void _po_spew(const char *pre, enum PO_SPEW_LEVEL level,
         const char *file, const char *func,
         int line, const char *fmt, ...)
 {
@@ -104,12 +104,12 @@ void _spew(const char *pre, enum PO_SPEW_LEVEL level,
 #endif
     va_list ap;
     va_start(ap, fmt);
-    _vspew(pre, file, func, line, fmt, ap);
+    _po_vspew(pre, file, func, line, fmt, ap);
     va_end(ap);
 }
 
 // This will sleep or exit
-void _assertAction(void)
+void _po_assertAction(void)
 {
     pid_t pid;
     pid = getpid();
@@ -128,7 +128,7 @@ void _assertAction(void)
 static void segSaultCatcher(int sig)
 {
     ERROR("caught signal %d SIGSEGV\n", sig);
-    _assertAction();
+    _po_assertAction();
 }
 
 // Add this to the start of your code so you may see where your code is

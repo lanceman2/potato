@@ -1,6 +1,5 @@
 CPPFLAGS := -I ../lib
 LDFLAGS := -pthread -lpthread
-CFLAGS := -Wall -Werror
 ADDLIBS := ../lib/libpotato.so
 
 
@@ -13,7 +12,6 @@ threadPool_tryDestroy_SOURCES := threadPool_tryDestroy.c
 threadPool_checkIdle_SOURCES := threadPool_checkIdle.c
 
 threadPool_runTaskTimeout_SOURCES := threadPool_runTaskTimeout.c
-
 
 
 

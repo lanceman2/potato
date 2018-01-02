@@ -1,0 +1,28 @@
+
+server listen address:port via TCP/IP fd with or without TLS with keys
+
+  makes connections through service object
+
+  is a bound listening socket
+
+  not much user space data, the fd is in the kernel
+
+  
+
+connections are produced by server but managed by service
+
+
+
+
+services are a group of servers and epoll event manager edge triggered
+
+  a threadPool 
+
+  a factory of servers
+
+  a factory of connections from the servers
+
+
+
+
+

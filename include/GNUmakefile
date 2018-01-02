@@ -26,10 +26,12 @@ IN_VARS := VERSION
 # the installed header file so it's not so large.
 potato.h: $(LIB_INC_FILES) GNUmakefile
 	echo -e "// This is a generated file\n" > $@
+	echo -e "#ifndef __POTATO_H__\n#define __POTATO_H__\n" >> $@
 	for i in $(LIB_INC_FILES); do\
 	    echo "////////// FILE: $$i //////////" >> $@ ;\
 	    $(CC) $(potato_h_cppflags) -fpreprocessed -dD -P -E $$i -o - >> $@ ||\
 	    exit 1 ; done
+	echo -e "\n#endif // #ifndef __POTATO_H__" >> $@
 
 
 include ../quickbuild.make

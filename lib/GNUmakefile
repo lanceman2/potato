@@ -1,5 +1,15 @@
+IN_VARS := VERSION
 
 libpotato.so_SOURCES := debug.c time.c murmurHash.c threadPool.c
+
+# Reference:
+# https://www.gnu.org/software/gnulib/manual/html_node/LD-Version-Scripts.html
+#
+# Run to see defined symbols:
+#    nm -D libpotato.so | grep ' T '
+#
+libpotato.so_LDFLAGS := -Wl,--version-script=libpotato.export
+
 
 INSTALL_DIR = $(PREFIX)/lib 
 

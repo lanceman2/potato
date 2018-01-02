@@ -91,7 +91,7 @@ wget $url -O quickbuild.make.org
 
 if [ -n "$sha512sum" ] ; then
     set +x
-    # We wanted a particular file, so we checks it's sha512 sum.
+    # We wanted a particular file, so we check it's sha512 sum.
     echo "$sha512sum  quickbuild.make.org" | sha512sum -c
     set -x
 else
@@ -101,6 +101,7 @@ else
     sha512sum quickbuild.make.org
 fi
 
+# Compress the file by removing comments.
 sed quickbuild.make.org -e 's/^\s*\#.*$//g' -e '/^$/d' >> quickbuild.make.tmp
 
 rm quickbuild.make.org

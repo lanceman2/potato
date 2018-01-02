@@ -1,0 +1,10 @@
+
+libpotato_@VERSION@
+{
+    global:
+        po*;
+        _po*;
+
+    local:
+        *;
+};
